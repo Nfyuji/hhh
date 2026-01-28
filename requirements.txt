@@ -1,0 +1,7 @@
+Flask
+APScheduler
+moviepy
+requests
+Pillow
+arabic-reshaper
+python-bidi
