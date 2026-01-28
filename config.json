@@ -1,0 +1,56 @@
+{
+    "facebook_page_id": "",
+    "facebook_access_token": "",
+    "publish_targets": {
+        "facebook": true,
+        "tiktok": false
+    },
+    "tiktok": {
+        "client_key": "awhp5vrjkh90twlf",
+        "client_secret": "fYr1YvrUSzYc2SRkmeHqFJp5TWo6OIHv",
+        "redirect_uri": "https://127.0.0.1:5000/tiktok/callback",
+        "access_token": "",
+        "refresh_token": "",
+        "expires_at": 0,
+        "open_id": ""
+    },
+    "schedule_time": "09:00",
+    "is_active": true,
+    "SERVER_HOST": "127.0.0.1",
+    "HTTPS_ENABLED": true,
+    "paths": {
+        "texts_file": "texts.txt",
+        "base_video": "uploads/base.mp4",
+        "output_video": "output.mp4",
+        "uploads_dir": "uploads"
+    },
+    "video": {
+        "max_duration_seconds": 15,
+        "size": [
+            1080,
+            1920
+        ],
+        "fps": 24,
+        "placeholder_bg_color": [
+            20,
+            30,
+            60
+        ]
+    },
+    "text_overlay": {
+        "font_path": "C:\\\\Windows\\\\Fonts\\\\arial.ttf",
+        "font_size": 70,
+        "min_font_size": 38,
+        "color": "#FFFFFF",
+        "shadow_color": "#000000",
+        "shadow_offset": 2,
+        "max_width_pct": 0.86,
+        "max_height_pct": 0.55,
+        "line_spacing_px": 14,
+        "align": "center",
+        "position_mode": "preset",
+        "preset": "center",
+        "x_pct": 0.5,
+        "y_pct": 0.5
+    }
+}
