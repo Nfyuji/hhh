@@ -2,6 +2,9 @@ import json
 import os
 import threading
 import time
+import base64
+import hashlib
+import secrets
 from flask import Flask, render_template, request, jsonify, send_file
 from apscheduler.schedulers.background import BackgroundScheduler
 import post  # Import our existing video logic
@@ -244,6 +247,15 @@ def tiktok_login():
         add_log("❌ TikTok login failed: Client Key or Redirect URI not set.")
         return jsonify({"status": "error", "message": "TikTok Client Key or Redirect URI not set in config."}), 400
 
+    # Generate PKCE code_verifier and code_challenge
+    code_verifier = secrets.token_urlsafe(64)
+    # S256 method requires SHA256 hash of code_verifier, then base64url-encoded
+    code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().rstrip('=')
+
+    # Store code_verifier in config for later use in callback
+    cfg["tiktok"]["code_verifier"] = code_verifier
+    save_config_file(cfg)
+
     # Scopes needed for Content Posting API: user.info.basic, video.publish, video.upload
     # See: https://developers.tiktok.com/doc/content-posting-api-v2-overview
     scopes = "user.info.basic,video.publish,video.upload"
@@ -255,6 +267,8 @@ def tiktok_login():
         f"&scope={scopes}"
         f"&response_type=code"
         f"&state={state}"
+        f"&code_challenge={code_challenge}"
+        f"&code_challenge_method=S256"
     )
     add_log(f"🚀 Redirecting to TikTok for OAuth: {auth_url}")
     from flask import redirect
@@ -287,12 +301,22 @@ def tiktok_callback():
 
     # Exchange code for access token
     token_url = "https://open.tiktokapis.com/v2/oauth/token/"
+    
+    # Retrieve code_verifier and clear it
+    code_verifier = cfg["tiktok"].pop("code_verifier", None)
+    save_config_file(cfg)
+
+    if not code_verifier:
+        add_log("❌ TikTok OAuth callback: Missing code_verifier.")
+        return jsonify({"status": "error", "message": "Missing code_verifier"}), 400
+
     data = {
         'client_key': client_key,
         'client_secret': client_secret,
         'code': code,
         'grant_type': 'authorization_code',
         'redirect_uri': redirect_uri,
+        'code_verifier': code_verifier, # Add code_verifier for PKCE
     }
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     
