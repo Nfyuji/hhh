@@ -61,7 +61,7 @@ DEFAULT_CONFIG = {
         "placeholder_bg_color": [20, 30, 60],
     },
     "text_overlay": {
-        "font_path": "C:\\Windows\\Fonts\\arial.ttf",
+        "font_path": "",  # Empty = auto-detect based on OS
         "font_size": 70,
         "color": "#FFFFFF",
         "shadow_color": "#000000",
@@ -486,12 +486,48 @@ def upload_base_video():
 def preview():
     cfg = load_config()
     try:
+        import traceback
+        add_log("🎬 Starting preview generation...")
+        
+        # Check if base video exists
+        base_video = (cfg.get("paths") or {}).get("base_video", "base.mp4")
+        if not os.path.exists(base_video):
+            error_msg = f"❌ Base video not found: {base_video}"
+            add_log(error_msg)
+            return jsonify({"status": "error", "message": error_msg}), 400
+        
+        # Check if texts file exists
+        texts_file = (cfg.get("paths") or {}).get("texts_file", "texts.txt")
+        if not os.path.exists(texts_file):
+            error_msg = f"❌ Texts file not found: {texts_file}"
+            add_log(error_msg)
+            return jsonify({"status": "error", "message": error_msg}), 400
+        
+        add_log(f"📝 Generating video with base: {base_video}")
         text = post.generate_video(config=cfg)
         out_path = (cfg.get("paths") or {}).get("output_video", "output.mp4")
+        
+        if not os.path.exists(out_path):
+            error_msg = f"❌ Output video was not created: {out_path}"
+            add_log(error_msg)
+            return jsonify({"status": "error", "message": error_msg}), 500
+        
+        add_log(f"✅ Preview generated successfully: {out_path}")
         return jsonify({"status": "success", "caption": text, "output_video": out_path})
     except Exception as e:
-        add_log(f"❌ Preview failed: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        import traceback
+        error_trace = traceback.format_exc()
+        error_msg = f"❌ Preview failed: {str(e)}"
+        add_log(error_msg)
+        add_log(f"📋 Traceback: {error_trace}")
+        # Return detailed error in development, simplified in production
+        is_render = bool(os.getenv("RENDER") or os.getenv("PORT"))
+        if is_render:
+            # On Render, return simplified error
+            return jsonify({"status": "error", "message": f"خطأ في توليد الفيديو: {str(e)}"}), 500
+        else:
+            # Local, return detailed error
+            return jsonify({"status": "error", "message": str(e), "traceback": error_trace}), 500
 
 @app.route('/download_last')
 def download_last():
@@ -682,25 +718,51 @@ def youtube_callback():
 def run_now():
     # Run in separate thread to not block request
     def runner():
+        import traceback
         config = load_config()
         try:
+            add_log("🚀 Run now started...")
+            
+            # Check prerequisites
+            base_video = (config.get("paths") or {}).get("base_video", "base.mp4")
+            if not os.path.exists(base_video):
+                add_log(f"❌ Base video not found: {base_video}")
+                return
+            
+            texts_file = (config.get("paths") or {}).get("texts_file", "texts.txt")
+            if not os.path.exists(texts_file):
+                add_log(f"❌ Texts file not found: {texts_file}")
+                return
+            
+            add_log("📹 Generating video...")
             text = post.generate_video(config=config)
+            
             # Pass config explicitly so we don't need to save globally in post.py
             targets = config.get("publish_targets") or {}
+            
             if targets.get("facebook", True):
+                add_log("📘 Uploading to Facebook...")
                 post.upload_to_facebook(text, config)
+            
             if targets.get("tiktok"):
+                add_log("🎵 Uploading to TikTok...")
                 video_path = (config.get("paths") or {}).get("output_video", "output.mp4")
                 tiktok.upload_to_tiktok(text, config, video_path=video_path)
+            
             if targets.get("youtube"):
+                add_log("📺 Uploading to YouTube...")
                 video_path = (config.get("paths") or {}).get("output_video", "output.mp4")
                 youtube.upload_video(title=text, description=text + " #shorts #quotes", file_path=video_path, config=config)
+            
+            add_log("✅ Run now completed successfully!")
         except Exception as e:
+            error_trace = traceback.format_exc()
             add_log(f"❌ Run now error: {e}")
+            add_log(f"📋 Traceback: {error_trace}")
 
     thread = threading.Thread(target=runner)
     thread.start()
-    return jsonify({"status": "started", "message": "جاري النشر في الخلفية... راقب الترمينال"})
+    return jsonify({"status": "started", "message": "جاري النشر في الخلفية... راقب السجلات"})
 
 if __name__ == '__main__':
     # Initial schedule setup
