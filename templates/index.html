@@ -240,10 +240,11 @@
                 </div>
 
                 <div class="grid">
-                    <div class="form-group">
-                        <label>وقت النشر اليومي (24h)</label>
-                        <input type="time" id="scheduleTime" name="schedule_time">
-                    </div>
+                <div class="form-group">
+                    <label>وقت النشر اليومي (24h)</label>
+                    <input type="time" id="scheduleTime" name="schedule_time" step="60">
+                    <p class="small" id="nextRunInfo" style="margin-top: 5px; color: #a2d2ff;"></p>
+                </div>
                     <div class="form-group">
                         <label style="opacity: 0">تفعيل</label>
                         <button type="button" id="saveBtn" class="btn">حفظ وتحديث المفاتيح</button>
@@ -498,9 +499,25 @@
                     }
                 document.getElementById('pageId').value = data.facebook_page_id || '';
                 document.getElementById('accessToken').value = data.facebook_access_token || '';
-                document.getElementById('scheduleTime').value = data.schedule_time || '09:00';
+                
+                // Only update schedule time if input is not focused (user not editing)
+                const scheduleTimeInput = document.getElementById('scheduleTime');
+                if (scheduleTimeInput !== document.activeElement) {
+                    const newTime = data.schedule_time || '09:00';
+                    // Normalize time format to HH:MM
+                    if (newTime && newTime.includes(':')) {
+                        const [h, m] = newTime.split(':');
+                        scheduleTimeInput.value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                    } else {
+                        scheduleTimeInput.value = newTime;
+                    }
+                }
+                
                 document.getElementById('isActive').value = data.is_active ? 'true' : 'false';
                 updateStatus(data.is_active);
+                
+                // Update schedule info after loading config
+                updateScheduleInfo();
 
                 // paths
                 document.getElementById('baseVideoPath').textContent = (data.paths && data.paths.base_video) ? data.paths.base_video : 'base.mp4';
@@ -569,8 +586,34 @@
         // Load config on startup
         loadConfig();
         
+        // Function to update schedule info
+        function updateScheduleInfo() {
+            fetch('/get_schedule_info')
+                .then(r => r.json())
+                .then(info => {
+                    const nextRunEl = document.getElementById('nextRunInfo');
+                    if (info.is_active && info.next_run) {
+                        nextRunEl.textContent = `⏰ النشر التالي: ${info.next_run}`;
+                        nextRunEl.style.color = '#2ecc71';
+                    } else if (info.is_active) {
+                        nextRunEl.textContent = '⏳ جاري جدولة النشر...';
+                        nextRunEl.style.color = '#f39c12';
+                    } else {
+                        nextRunEl.textContent = '⛔ النشر التلقائي متوقف';
+                        nextRunEl.style.color = '#e74c3c';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching schedule info:', err);
+                });
+        }
+        
         // Auto-refresh config every 5 seconds to update connection status
         setInterval(loadConfig, 5000);
+        // Update schedule info every 10 seconds
+        setInterval(updateScheduleInfo, 10000);
+        // Initial update
+        updateScheduleInfo();
 
         function getUuidData() {
             return {
@@ -590,6 +633,17 @@
         function saveAllSettings(showAlert = true) {
             const data = getUuidData();
             console.log('Saving data:', data); // Debug
+            
+            // Validate schedule time before sending
+            const scheduleTime = data.schedule_time;
+            if (scheduleTime) {
+                const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+                if (!timeRegex.test(scheduleTime)) {
+                    alert('❌ تنسيق الوقت غير صحيح. استخدم HH:MM (مثال: 14:30)');
+                    return Promise.reject(new Error('Invalid time format'));
+                }
+            }
+            
             return fetch('/save_config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -607,8 +661,8 @@
                 if (res.status === 'success') {
                     if (showAlert) alert('✅ ' + (res.message || 'تم حفظ الإعدادات بنجاح!'));
                     updateStatus(data.is_active);
-                    // Reload config to show updated values
-                    loadConfig();
+                    // Reload config to show updated values (but preserve focused inputs)
+                    setTimeout(() => loadConfig(), 500);
                 } else {
                     throw new Error(res.message || 'فشل الحفظ');
                 }
