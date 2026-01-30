@@ -258,6 +258,23 @@
                     </select>
                 </div>
 
+                <!-- Platform Management Links -->
+                <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; margin-bottom: 20px;">
+                    <h2 style="margin-top: 0; color: white;">🌐 إدارة المنصات</h2>
+                    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.9);">إدارة إعدادات كل منصة بشكل منفصل</p>
+                    <div class="grid">
+                        <a href="/manage/facebook" class="btn" style="background-color:#1877f2; text-decoration:none; display:block; text-align:center;">
+                            <i class="fab fa-facebook"></i> إدارة Facebook
+                        </a>
+                        <a href="/manage/tiktok" class="btn" style="background-color:#00f2ea; color:#000; text-decoration:none; display:block; text-align:center;">
+                            <i class="fab fa-tiktok"></i> إدارة TikTok
+                        </a>
+                        <a href="/manage/youtube" class="btn" style="background-color:#ff0000; text-decoration:none; display:block; text-align:center;">
+                            <i class="fab fa-youtube"></i> إدارة YouTube
+                        </a>
+                    </div>
+                </div>
+
                 <div class="grid">
                     <div class="form-group">
                         <label>النشر على Facebook؟</label>
@@ -274,7 +291,6 @@
                             <option value="false">⛔ لا</option>
                             <option value="true">✅ نعم</option>
                         </select>
-                        <p class="small">ملاحظة: TikTok يحتاج ربط OAuth من حساب مطور.</p>
                     </div>
                     <div class="form-group">
                         <label>النشر على YouTube؟</label>
@@ -283,22 +299,6 @@
                             <option value="false">⛔ لا</option>
                             <option value="true">✅ نعم</option>
                         </select>
-                    </div>
-                </div>
-
-                <div class="grid">
-                    <div class="form-group">
-                        <label>حالة ربط TikTok: <span id="tiktokStatus" class="status-badge status-inactive">غير
-                                متصل</span></label>
-                        <button type="button" onclick="connectTikTok()" class="btn" style="background-color:#00f2ea">🔗
-                            ربط حساب TikTok</button>
-                        <p class="small">الـ Open ID الحالي: <span id="tiktokOpenId" class="pill">لا يوجد</span></p>
-                    </div>
-                    <div class="form-group">
-                        <label>حالة ربط YouTube: <span id="youtubeStatus" class="status-badge status-inactive">غير
-                                متصل</span></label>
-                        <button type="button" onclick="connectYouTube()" class="btn" style="background-color:#ff0000">🔗
-                            ربط حساب YouTube</button>
                     </div>
                 </div>
 
@@ -439,39 +439,63 @@
         let baseUrl = '';
         let isRender = false;
         
-        fetch('/api/base_url')
-            .then(r => r.json())
-            .then(env => {
-                baseUrl = env.base_url;
-                isRender = env.is_render;
-                const linkEl = document.getElementById('baseUrlLink');
-                const displayEl = document.getElementById('baseUrlDisplay');
-                const badgeEl = document.getElementById('envBadge');
-                
-                linkEl.href = baseUrl;
-                displayEl.textContent = baseUrl;
-                
-                if (isRender) {
-                    badgeEl.textContent = '🌐 Render';
-                    badgeEl.style.background = 'rgba(0, 242, 234, 0.2)';
-                    badgeEl.style.borderColor = '#00f2ea';
-                } else {
-                    badgeEl.textContent = '💻 محلي';
-                    badgeEl.style.background = 'rgba(162, 210, 255, 0.2)';
-                    badgeEl.style.borderColor = '#a2d2ff';
-                }
-            })
-            .catch(() => {
-                // Fallback
-                baseUrl = window.location.origin;
-                document.getElementById('baseUrlLink').href = baseUrl;
-                document.getElementById('baseUrlDisplay').textContent = baseUrl;
-            });
+        // Function to update base URL display
+        function updateBaseUrl() {
+            fetch('/api/base_url')
+                .then(r => {
+                    if (!r.ok) throw new Error('Failed to fetch');
+                    return r.json();
+                })
+                .then(env => {
+                    baseUrl = env.base_url || window.location.origin;
+                    isRender = env.is_render || false;
+                    const linkEl = document.getElementById('baseUrlLink');
+                    const displayEl = document.getElementById('baseUrlDisplay');
+                    const badgeEl = document.getElementById('envBadge');
+                    
+                    if (linkEl) linkEl.href = baseUrl;
+                    if (displayEl) displayEl.textContent = baseUrl;
+                    
+                    if (badgeEl) {
+                        if (isRender) {
+                            badgeEl.textContent = '🌐 Render';
+                            badgeEl.style.background = 'rgba(0, 242, 234, 0.2)';
+                            badgeEl.style.borderColor = '#00f2ea';
+                        } else {
+                            badgeEl.textContent = '💻 محلي';
+                            badgeEl.style.background = 'rgba(162, 210, 255, 0.2)';
+                            badgeEl.style.borderColor = '#a2d2ff';
+                        }
+                    }
+                })
+                .catch(() => {
+                    // Fallback
+                    baseUrl = window.location.origin;
+                    const linkEl = document.getElementById('baseUrlLink');
+                    const displayEl = document.getElementById('baseUrlDisplay');
+                    if (linkEl) linkEl.href = baseUrl;
+                    if (displayEl) displayEl.textContent = baseUrl;
+                });
+        }
         
-        // Load config on startup
-        fetch('/get_config')
-            .then(r => r.json())
-            .then(data => {
+        // Load base URL on startup
+        updateBaseUrl();
+        
+        // Function to load and update config
+        function loadConfig() {
+            fetch('/get_config')
+                .then(r => {
+                    if (!r.ok) {
+                        console.error('Failed to load config:', r.status);
+                        return {};
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    if (!data || data.error) {
+                        console.error('Config error:', data.error || 'Unknown error');
+                        return;
+                    }
                 document.getElementById('pageId').value = data.facebook_page_id || '';
                 document.getElementById('accessToken').value = data.facebook_access_token || '';
                 document.getElementById('scheduleTime').value = data.schedule_time || '09:00';
@@ -492,17 +516,31 @@
                 // youtube details
 
 
-                // statuses
+                // statuses - Update connection status
+                // TikTok
+                const ts = document.getElementById('tiktokStatus');
                 if (data.tiktok && data.tiktok.access_token) {
-                    const ts = document.getElementById('tiktokStatus');
-                    ts.textContent = 'متصل';
-                    ts.className = 'status-badge status-active';
-                    document.getElementById('tiktokOpenId').textContent = data.tiktok.open_id || '???';
+                    if (ts) {
+                        ts.textContent = 'متصل';
+                        ts.className = 'status-badge status-active';
+                    }
+                    const openIdEl = document.getElementById('tiktokOpenId');
+                    if (openIdEl) openIdEl.textContent = data.tiktok.open_id || '???';
+                } else if (ts) {
+                    ts.textContent = 'غير متصل';
+                    ts.className = 'status-badge status-inactive';
                 }
-                if (data.youtube && data.youtube.refresh_token) {
-                    const ys = document.getElementById('youtubeStatus');
-                    ys.textContent = 'متصل';
-                    ys.className = 'status-badge status-active';
+                
+                // YouTube
+                const ys = document.getElementById('youtubeStatus');
+                if (data.youtube && (data.youtube.refresh_token || data.youtube.token)) {
+                    if (ys) {
+                        ys.textContent = 'متصل';
+                        ys.className = 'status-badge status-active';
+                    }
+                } else if (ys) {
+                    ys.textContent = 'غير متصل';
+                    ys.className = 'status-badge status-inactive';
                 }
 
                 // overlay
@@ -522,7 +560,17 @@
 
                 loadTexts();
                 refreshLogs();
-            });
+                })
+                .catch(err => {
+                    console.error('Error loading config:', err);
+                });
+        }
+        
+        // Load config on startup
+        loadConfig();
+        
+        // Auto-refresh config every 5 seconds to update connection status
+        setInterval(loadConfig, 5000);
 
         function getUuidData() {
             return {
