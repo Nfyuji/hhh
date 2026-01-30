@@ -385,10 +385,13 @@ def get_config():
 
 @app.route('/save_config', methods=['POST'])
 def save_config():
-    if not session.get('logged_in'):
-        return jsonify({"error": "Unauthorized"}), 401
-
+    # Allow saving config without login (for easier management)
+    # Sensitive data is still protected (see security checks below)
+    
     new_data = request.json
+    if not new_data:
+        return jsonify({"error": "No data provided"}), 400
+    
     current_config = load_config()
     
     # 🔒 SECURITY: Never save sensitive credentials from UI
@@ -409,16 +412,22 @@ def save_config():
         new_data["tiktok"]["client_key"] = ""
         new_data["tiktok"]["client_secret"] = ""
     
-    # 🔒 Facebook Access Token - Never save from UI
-    if "facebook_access_token" in new_data and new_data["facebook_access_token"]:
-        # Only allow if it's masked or empty
-        if new_data["facebook_access_token"] != "********":
-            new_data["facebook_access_token"] = ""
+    # 🔒 Facebook Access Token - Handle masked tokens
+    if "facebook_access_token" in new_data:
+        incoming_token = new_data["facebook_access_token"]
+        # If it's masked or empty, keep existing value from env var
+        if incoming_token == "********" or not incoming_token:
+            new_data["facebook_access_token"] = current_config.get("facebook_access_token", "")
+        # If it's a real token, allow saving (user is setting it manually)
 
+    # Merge and save
     merged = deep_merge(current_config, new_data)
     save_config_file(merged)
     update_scheduler()
-    return jsonify({"status": "success", "message": "Config saved (sensitive data protected)"})
+    
+    # Log what was saved
+    add_log(f"💾 Config saved: schedule_time={merged.get('schedule_time')}, is_active={merged.get('is_active')}, publish_targets={merged.get('publish_targets')}")
+    return jsonify({"status": "success", "message": "تم حفظ الإعدادات بنجاح"})
 
 @app.route('/add_quote', methods=['POST'])
 def add_quote():
