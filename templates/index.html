@@ -41,7 +41,6 @@
             margin: 0;
             font-size: 2.5rem;
             background: -webkit-linear-gradient(45deg, #e94560, #a2d2ff);
-            -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -302,17 +301,7 @@
                     </div>
                 </div>
 
-                <div class="grid">
-                    <div class="form-group">
-                        <label>YouTube Client ID</label>
-                        <input type="text" id="ytClientId" name="youtube_client_id" placeholder="Google Client ID">
-                    </div>
-                    <div class="form-group">
-                        <label>YouTube Client Secret</label>
-                        <input type="text" id="ytClientSecret" name="youtube_client_secret"
-                            placeholder="Google Client Secret">
-                    </div>
-                </div>
+
             </form>
         </div>
 
@@ -467,9 +456,7 @@
                 document.getElementById('targetYouTube').value = targets.youtube ? 'true' : 'false';
 
                 // youtube details
-                const yt = data.youtube || {};
-                document.getElementById('ytClientId').value = yt.client_id || '';
-                document.getElementById('ytClientSecret').value = yt.client_secret || '';
+
 
                 // statuses
                 if (data.tiktok && data.tiktok.access_token) {
@@ -514,10 +501,7 @@
                     tiktok: document.getElementById('targetTikTok').value === 'true',
                     youtube: document.getElementById('targetYouTube').value === 'true'
                 },
-                youtube: {
-                    client_id: document.getElementById('ytClientId').value,
-                    client_secret: document.getElementById('ytClientSecret').value
-                }
+
             };
         }
 
