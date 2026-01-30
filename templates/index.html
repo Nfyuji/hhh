@@ -589,13 +589,33 @@
 
         function saveAllSettings(showAlert = true) {
             const data = getUuidData();
+            console.log('Saving data:', data); // Debug
             return fetch('/save_config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
-            }).then(r => r.json()).then(res => {
-                if (showAlert) alert('تم حفظ الإعدادات بنجاح!');
-                updateStatus(data.is_active);
+            })
+            .then(r => {
+                if (!r.ok) {
+                    return r.json().then(err => {
+                        throw new Error(err.message || err.error || 'فشل الحفظ');
+                    });
+                }
+                return r.json();
+            })
+            .then(res => {
+                if (res.status === 'success') {
+                    if (showAlert) alert('✅ ' + (res.message || 'تم حفظ الإعدادات بنجاح!'));
+                    updateStatus(data.is_active);
+                    // Reload config to show updated values
+                    loadConfig();
+                } else {
+                    throw new Error(res.message || 'فشل الحفظ');
+                }
+            })
+            .catch(err => {
+                console.error('Save error:', err);
+                alert('❌ خطأ: ' + err.message);
             });
         }
 
