@@ -1,10 +1,12 @@
 import os
 import time
-from google_auth_oauthlib.flow import Flow
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-from google.auth.transport.requests import Request
+import unicodedata
+# Google API libraries (installed via requirements.txt)
+from google_auth_oauthlib.flow import Flow  # type: ignore
+from google.oauth2.credentials import Credentials  # type: ignore
+from googleapiclient.discovery import build  # type: ignore
+from googleapiclient.http import MediaFileUpload  # type: ignore
+from google.auth.transport.requests import Request  # type: ignore
 
 # Define the scopes required for the application
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
@@ -120,11 +122,52 @@ def upload_video(title: str, description: str, file_path: str, config: dict):
         add_log(f"❌ YouTube Auth Error: {e}")
         return
 
+    # 🔤 Fix Arabic text encoding for YouTube
+    # Ensure text is properly encoded as UTF-8 string
+    def ensure_utf8(text):
+        """Ensure text is properly encoded UTF-8 string for YouTube API."""
+        if text is None:
+            return ""
+        # If it's bytes, decode it
+        if isinstance(text, bytes):
+            try:
+                text = text.decode('utf-8')
+            except UnicodeDecodeError:
+                # Try with error handling
+                text = text.decode('utf-8', errors='replace')
+        # Ensure it's a string (Unicode)
+        text = str(text)
+        # Normalize Unicode (NFD to NFC) to ensure consistent encoding
+        try:
+            text = unicodedata.normalize('NFC', text)
+        except:
+            pass
+        # Clean and strip
+        text = text.strip()
+        # Remove any zero-width characters that might cause issues
+        text = text.replace('\u200b', '')  # Zero-width space
+        text = text.replace('\u200c', '')  # Zero-width non-joiner
+        text = text.replace('\u200d', '')  # Zero-width joiner
+        return text
+    
+    # Clean and ensure UTF-8 encoding
+    clean_title = ensure_utf8(title)
+    clean_description = ensure_utf8(description)
+    
+    # Limit title to 100 characters (YouTube limit)
+    clean_title = clean_title[:100]
+    
+    # Add hashtags to description
+    if clean_description:
+        clean_description = clean_description + " #shorts #quotes #motivation"
+    else:
+        clean_description = "#shorts #quotes #motivation"
+
     body = {
         "snippet": {
-            "title": title[:100], # Max 100 chars
-            "description": description,
-            "tags": ["shorts", "motivation", "quotes"],
+            "title": clean_title,
+            "description": clean_description,
+            "tags": ["shorts", "motivation", "quotes", "تحفيز", "حكم"],
             "categoryId": "22" # People & Blogs
         },
         "status": {
@@ -133,9 +176,19 @@ def upload_video(title: str, description: str, file_path: str, config: dict):
         }
     }
 
-    add_log(f"🚀 Starting YouTube upload: {title}")
+    add_log(f"🚀 Starting YouTube upload: {clean_title}")
+    
+    # Debug: Log the text to ensure it's correct (UTF-8)
+    try:
+        add_log(f"📝 Title: {clean_title}")
+        add_log(f"📝 Description preview: {clean_description[:50]}...")
+    except Exception as e:
+        add_log(f"⚠️ Encoding debug error: {e}")
     
     media = MediaFileUpload(file_path, chunksize=-1, resumable=True)
+    
+    # The googleapiclient library handles UTF-8 encoding automatically
+    # We just need to ensure the strings are proper Unicode strings (which they are)
     request = youtube.videos().insert(
         part="snippet,status",
         body=body,
