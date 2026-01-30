@@ -9,6 +9,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 from apscheduler.schedulers.background import BackgroundScheduler
 import post  # Import our existing video logic
 import tiktok
+import youtube
 
 app = Flask(__name__)
 CONFIG_FILE = 'config.json'
@@ -23,11 +24,20 @@ DEFAULT_CONFIG = {
     "HTTPS_ENABLED": False, # Will be enabled by run.ps1 for TikTok OAuth
     "facebook_page_id": "",
     "facebook_access_token": "",
-    "publish_targets": {"facebook": True, "tiktok": False},
+    "publish_targets": {"facebook": True, "tiktok": False, "youtube": False},
+    "youtube": {
+        "client_id": "",
+        "client_secret": "",
+        "token": None,
+        "refresh_token": None,
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "redirect_uri": "http://127.0.0.1:5000/youtube/callback",
+        "scopes": ["https://www.googleapis.com/auth/youtube.upload"],
+    },
     "tiktok": {
         "client_key": "awhp5vrjkh90twlf",
         "client_secret": "fYr1YvrUSzYc2SRkmeHqFJp5TWo6OIHv",
-        "redirect_uri": "https://127.0.0.1:5000/tiktok/callback", # Changed to HTTPS
+        "redirect_uri": "http://127.0.0.1:5000/tiktok/callback", # Changed to HTTP for local test
         "access_token": "",
         "refresh_token": "",
         "expires_at": 0,
@@ -117,6 +127,12 @@ def scheduled_job():
                 tiktok.upload_to_tiktok(text, config, video_path=video_path)
             except Exception as e:
                 add_log(f"❌ TikTok upload failed: {e}")
+        if targets.get("youtube"):
+            try:
+                video_path = (config.get("paths") or {}).get("output_video", "output.mp4")
+                youtube.upload_video(title=text, description=text + " #shorts #quotes", file_path=video_path, config=config)
+            except Exception as e:
+                add_log(f"❌ YouTube upload failed: {e}")
         add_log("✅ Scheduled Task Completed Successfully.")
     except Exception as e:
         add_log(f"❌ Error in scheduled job: {e}")
@@ -344,6 +360,50 @@ def tiktok_callback():
         add_log(f"❌ TikTok token exchange request failed: {e}")
         return jsonify({"status": "error", "message": f"Failed to exchange token: {e}"}), 500
 
+@app.route('/youtube/login')
+def youtube_login():
+    cfg = load_config()
+    state = "some_random_state" # Should be random
+    try:
+        auth_url = youtube.get_auth_url(cfg, state=state)
+        add_log(f"🚀 Redirecting to YouTube for OAuth: {auth_url}")
+        from flask import redirect
+        return redirect(auth_url)
+    except Exception as e:
+         add_log(f"❌ YouTube login setup failed: {e}")
+         return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route('/youtube/callback')
+def youtube_callback():
+    cfg = load_config()
+    # verify state...
+    code = request.args.get('code')
+    if not code:
+        return "Missing code", 400
+    
+    try:
+        creds_dict = youtube.exchange_code_for_credentials(cfg, code)
+        # Update config with new credentials
+        # We need to preserve client_id/secret if not returned (usually they are in creds object though)
+        # deep_merge might overwrite everything, let's be careful.
+        
+        y_cfg = cfg.get("youtube", {})
+        y_cfg["token"] = creds_dict.get("token")
+        y_cfg["refresh_token"] = creds_dict.get("refresh_token")
+        y_cfg["token_uri"] = creds_dict.get("token_uri")
+        y_cfg["scopes"] = creds_dict.get("scopes")
+        # client_id/secret usually static, but let's keep them if they are in creds
+        if creds_dict.get("client_id"): y_cfg["client_id"] = creds_dict.get("client_id")
+        if creds_dict.get("client_secret"): y_cfg["client_secret"] = creds_dict.get("client_secret")
+
+        cfg["youtube"] = y_cfg
+        save_config_file(cfg)
+        
+        add_log("✅ YouTube OAuth successful! Tokens saved.")
+        return render_template("tiktok_auth_success.html") # Reuse existing success page or make a new one
+    except Exception as e:
+        add_log(f"❌ YouTube callback failed: {e}")
+        return f"Error: {e}", 500
 @app.route('/run_now', methods=['POST'])
 def run_now():
     # Run in separate thread to not block request
@@ -358,6 +418,9 @@ def run_now():
             if targets.get("tiktok"):
                 video_path = (config.get("paths") or {}).get("output_video", "output.mp4")
                 tiktok.upload_to_tiktok(text, config, video_path=video_path)
+            if targets.get("youtube"):
+                video_path = (config.get("paths") or {}).get("output_video", "output.mp4")
+                youtube.upload_video(title=text, description=text + " #shorts #quotes", file_path=video_path, config=config)
         except Exception as e:
             add_log(f"❌ Run now error: {e}")
 
