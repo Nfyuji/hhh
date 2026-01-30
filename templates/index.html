@@ -215,8 +215,9 @@
         <div class="header">
             <h1>🚀 لوحة تحكم البوت</h1>
             <p>إدارة نشر الفيديوهات التحفيزية تلقائيًا</p>
-            <p class="small">اللوحة تعمل على: <a href="http://127.0.0.1:5000" target="_blank">http://127.0.0.1:5000</a>
-                (انقر لفتحها)</p>
+            <p class="small">اللوحة تعمل على: <a href="#" id="baseUrlLink" target="_blank" id="baseUrlDisplay">جاري التحميل...</a>
+                <span id="envBadge" class="pill" style="margin-right:10px;"></span>
+            </p>
         </div>
 
         <!-- Status & Config -->
@@ -434,6 +435,39 @@
     </div>
 
     <script>
+        // Detect environment and update UI
+        let baseUrl = '';
+        let isRender = false;
+        
+        fetch('/api/base_url')
+            .then(r => r.json())
+            .then(env => {
+                baseUrl = env.base_url;
+                isRender = env.is_render;
+                const linkEl = document.getElementById('baseUrlLink');
+                const displayEl = document.getElementById('baseUrlDisplay');
+                const badgeEl = document.getElementById('envBadge');
+                
+                linkEl.href = baseUrl;
+                displayEl.textContent = baseUrl;
+                
+                if (isRender) {
+                    badgeEl.textContent = '🌐 Render';
+                    badgeEl.style.background = 'rgba(0, 242, 234, 0.2)';
+                    badgeEl.style.borderColor = '#00f2ea';
+                } else {
+                    badgeEl.textContent = '💻 محلي';
+                    badgeEl.style.background = 'rgba(162, 210, 255, 0.2)';
+                    badgeEl.style.borderColor = '#a2d2ff';
+                }
+            })
+            .catch(() => {
+                // Fallback
+                baseUrl = window.location.origin;
+                document.getElementById('baseUrlLink').href = baseUrl;
+                document.getElementById('baseUrlDisplay').textContent = baseUrl;
+            });
+        
         // Load config on startup
         fetch('/get_config')
             .then(r => r.json())
