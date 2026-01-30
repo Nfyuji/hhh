@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,8 +50,8 @@
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .form-group {
@@ -64,7 +65,9 @@
             color: #a2d2ff;
         }
 
-        input[type="text"], input[type="time"], textarea {
+        input[type="text"],
+        input[type="time"],
+        textarea {
             width: 100%;
             padding: 12px;
             border-radius: 8px;
@@ -77,7 +80,8 @@
             transition: 0.3s;
         }
 
-        input:focus, textarea:focus {
+        input:focus,
+        textarea:focus {
             border-color: var(--accent);
             outline: none;
         }
@@ -111,9 +115,18 @@
             font-size: 0.9rem;
             margin-right: 10px;
         }
-        
-        .status-active { background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
-        .status-inactive { background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; }
+
+        .status-active {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+        }
+
+        .status-inactive {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
 
         .toggle-switch {
             display: flex;
@@ -153,8 +166,8 @@
             display: inline-block;
             padding: 6px 10px;
             border-radius: 999px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             font-size: 0.85rem;
         }
 
@@ -162,9 +175,9 @@
             max-height: 220px;
             overflow: auto;
             border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 10px;
-            background: rgba(0,0,0,0.25);
+            background: rgba(0, 0, 0, 0.25);
         }
 
         .row {
@@ -173,414 +186,508 @@
             align-items: center;
             justify-content: space-between;
             padding: 8px 6px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
-        .row:last-child { border-bottom: none; }
-        .row button { width: auto; padding: 8px 12px; }
-        
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .row button {
+            width: auto;
+            padding: 8px 12px;
+        }
+
         @media (max-width: 600px) {
-            .grid { grid-template-columns: 1fr; }
-            .grid-3 { grid-template-columns: 1fr; }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>🚀 لوحة تحكم البوت</h1>
-        <p>إدارة نشر الفيديوهات التحفيزية تلقائيًا</p>
-        <p class="small">اللوحة تعمل على: <a href="https://127.0.0.1:5000" target="_blank">https://127.0.0.1:5000</a> (انقر لفتحها)</p>
-    </div>
-
-    <!-- Status & Config -->
-    <div class="card">
-        <div class="toggle-switch">
-             <div>
-                 <h2>⚙️ الإعدادات العامة</h2>
-                 <p>حالة النظام: <span id="systemStatus" class="status-badge status-inactive">متوقف</span></p>
-             </div>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 لوحة تحكم البوت</h1>
+            <p>إدارة نشر الفيديوهات التحفيزية تلقائيًا</p>
+            <p class="small">اللوحة تعمل على: <a href="http://127.0.0.1:5000" target="_blank">http://127.0.0.1:5000</a>
+                (انقر لفتحها)</p>
         </div>
-        
-        <form id="configForm">
-            <div class="form-group">
-                <label>معرف الصفحة (Page ID)</label>
-                <input type="text" id="pageId" name="facebook_page_id" placeholder="مثال: 1000872635...">
+
+        <!-- Status & Config -->
+        <div class="card">
+            <div class="toggle-switch">
+                <div>
+                    <h2>⚙️ الإعدادات العامة</h2>
+                    <p>حالة النظام: <span id="systemStatus" class="status-badge status-inactive">متوقف</span></p>
+                </div>
             </div>
+
+            <form id="configForm">
+                <div class="form-group">
+                    <label>معرف الصفحة (Page ID)</label>
+                    <input type="text" id="pageId" name="facebook_page_id" placeholder="مثال: 1000872635...">
+                </div>
+                <div class="form-group">
+                    <label>رمز الوصول (Access Token)</label>
+                    <input type="text" id="accessToken" name="facebook_access_token" placeholder="EAA...">
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label>وقت النشر اليومي (24h)</label>
+                        <input type="time" id="scheduleTime" name="schedule_time">
+                    </div>
+                    <div class="form-group">
+                        <label style="opacity: 0">تفعيل</label>
+                        <button type="button" id="saveBtn" class="btn">حفظ وتحديث المفاتيح</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>تفعيل النشر التلقائي؟</label>
+                    <select id="isActive" name="is_active"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                        <option value="false">⛔ إيقاف المؤقت</option>
+                        <option value="true">✅ تشغيل المؤقت</option>
+                    </select>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label>النشر على Facebook؟</label>
+                        <select id="targetFacebook"
+                            style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                            <option value="true">✅ نعم</option>
+                            <option value="false">⛔ لا</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>النشر على TikTok؟</label>
+                        <select id="targetTikTok"
+                            style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                            <option value="false">⛔ لا</option>
+                            <option value="true">✅ نعم</option>
+                        </select>
+                        <p class="small">ملاحظة: TikTok يحتاج ربط OAuth من حساب مطور.</p>
+                    </div>
+                    <div class="form-group">
+                        <label>النشر على YouTube؟</label>
+                        <select id="targetYouTube"
+                            style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                            <option value="false">⛔ لا</option>
+                            <option value="true">✅ نعم</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label>حالة ربط TikTok: <span id="tiktokStatus" class="status-badge status-inactive">غير
+                                متصل</span></label>
+                        <button type="button" onclick="connectTikTok()" class="btn" style="background-color:#00f2ea">🔗
+                            ربط حساب TikTok</button>
+                        <p class="small">الـ Open ID الحالي: <span id="tiktokOpenId" class="pill">لا يوجد</span></p>
+                    </div>
+                    <div class="form-group">
+                        <label>حالة ربط YouTube: <span id="youtubeStatus" class="status-badge status-inactive">غير
+                                متصل</span></label>
+                        <button type="button" onclick="connectYouTube()" class="btn" style="background-color:#ff0000">🔗
+                            ربط حساب YouTube</button>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label>YouTube Client ID</label>
+                        <input type="text" id="ytClientId" name="youtube_client_id" placeholder="Google Client ID">
+                    </div>
+                    <div class="form-group">
+                        <label>YouTube Client Secret</label>
+                        <input type="text" id="ytClientSecret" name="youtube_client_secret"
+                            placeholder="Google Client Secret">
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Upload Base Video -->
+        <div class="card">
+            <h2>🎞️ فيديو الأساس</h2>
+            <p class="small">ارفع فيديو (MP4) ليكون الخلفية التي نضع عليها النص. سيتم حفظه باسم ثابت داخل المشروع.</p>
             <div class="form-group">
-                <label>رمز الوصول (Access Token)</label>
-                <input type="text" id="accessToken" name="facebook_access_token" placeholder="EAA...">
+                <label>رفع base.mp4</label>
+                <input type="file" id="baseVideoFile" accept="video/mp4"
+                    style="width:100%; padding:12px; border-radius:8px; background:#0f3460; color:white; border:none;">
             </div>
-            
+            <button class="btn" onclick="uploadBaseVideo()">⬆️ رفع الفيديو</button>
+            <p class="small">الحالي: <span id="baseVideoPath" class="pill">غير معروف</span></p>
+        </div>
+
+        <!-- Text Overlay Controls -->
+        <div class="card">
+            <h2>🧩 إعدادات النص على الفيديو</h2>
             <div class="grid">
                 <div class="form-group">
-                    <label>وقت النشر اليومي (24h)</label>
-                    <input type="time" id="scheduleTime" name="schedule_time">
+                    <label>حجم الخط</label>
+                    <input type="text" id="fontSize" placeholder="مثال: 70">
                 </div>
                 <div class="form-group">
-                    <label style="opacity: 0">تفعيل</label>
-                    <button type="button" id="saveBtn" class="btn">حفظ وتحديث المفاتيح</button>
+                    <label>محاذاة</label>
+                    <select id="textAlign"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                        <option value="center">وسط</option>
+                        <option value="left">يسار</option>
+                        <option value="right">يمين</option>
+                    </select>
                 </div>
             </div>
-             <div class="form-group">
-                <label>تفعيل النشر التلقائي؟</label>
-                <select id="isActive" name="is_active" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                    <option value="false">⛔ إيقاف المؤقت</option>
-                     <option value="true">✅ تشغيل المؤقت</option>
-                 </select>
-             </div>
 
-             <div class="grid">
-                 <div class="form-group">
-                     <label>النشر على Facebook؟</label>
-                     <select id="targetFacebook" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                         <option value="true">✅ نعم</option>
-                         <option value="false">⛔ لا</option>
-                     </select>
-                 </div>
-                 <div class="form-group">
-                     <label>النشر على TikTok؟</label>
-                     <select id="targetTikTok" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                         <option value="false">⛔ لا</option>
-                         <option value="true">✅ نعم</option>
-                     </select>
-                     <p class="small">ملاحظة: TikTok يحتاج ربط OAuth من حساب مطور.</p>
-                 </div>
-             </div>
+            <div class="grid">
+                <div class="form-group">
+                    <label>لون النص (Hex)</label>
+                    <input type="text" id="textColor" placeholder="#FFFFFF">
+                </div>
+                <div class="form-group">
+                    <label>لون الظل (Hex)</label>
+                    <input type="text" id="shadowColor" placeholder="#000000">
+                </div>
+            </div>
 
-             <div class="form-group">
-                <label>حالة ربط TikTok: <span id="tiktokStatus" class="status-badge status-inactive">غير متصل</span></label>
-                <button type="button" onclick="connectTikTok()" class="btn" style="background-color:#00f2ea">🔗 ربط حساب TikTok</button>
-                <p class="small">الـ Open ID الحالي: <span id="tiktokOpenId" class="pill">لا يوجد</span></p>
-             </div>
-         </form>
-     </div>
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>قوة الظل (px)</label>
+                    <input type="text" id="shadowOffset" placeholder="2">
+                </div>
+                <div class="form-group">
+                    <label>تباعد الأسطر (px)</label>
+                    <input type="text" id="lineSpacing" placeholder="14">
+                </div>
+                <div class="form-group">
+                    <label>عرض النص % من الفيديو</label>
+                    <input type="text" id="maxWidthPct" placeholder="0.86">
+                </div>
+            </div>
 
-    <!-- Upload Base Video -->
-    <div class="card">
-        <h2>🎞️ فيديو الأساس</h2>
-        <p class="small">ارفع فيديو (MP4) ليكون الخلفية التي نضع عليها النص. سيتم حفظه باسم ثابت داخل المشروع.</p>
-        <div class="form-group">
-            <label>رفع base.mp4</label>
-            <input type="file" id="baseVideoFile" accept="video/mp4" style="width:100%; padding:12px; border-radius:8px; background:#0f3460; color:white; border:none;">
+            <div class="grid">
+                <div class="form-group">
+                    <label>وضع المكان</label>
+                    <select id="positionMode"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;"
+                        onchange="togglePositionUI()">
+                        <option value="preset">جاهز (أعلى/وسط/أسفل)</option>
+                        <option value="manual">يدوي (X/Y)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="presetWrap">
+                    <label>المكان الجاهز</label>
+                    <select id="presetPos"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                        <option value="top">أعلى</option>
+                        <option value="center">وسط</option>
+                        <option value="bottom">أسفل</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid" id="manualWrap" style="display:none;">
+                <div class="form-group">
+                    <label>X (0..1)</label>
+                    <input type="text" id="xPct" placeholder="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Y (0..1)</label>
+                    <input type="text" id="yPct" placeholder="0.5">
+                </div>
+            </div>
+
+            <button class="btn" onclick="saveOverlaySettings()">💾 حفظ إعدادات النص</button>
+            <p class="small">نصيحة: استخدم “معاينة” للتأكد من الموضع قبل النشر.</p>
         </div>
-        <button class="btn" onclick="uploadBaseVideo()">⬆️ رفع الفيديو</button>
-        <p class="small">الحالي: <span id="baseVideoPath" class="pill">غير معروف</span></p>
+
+        <!-- Actions -->
+        <div class="card">
+            <h2>⚡ إجراءات سريعة</h2>
+            <div class="grid">
+                <button onclick="runNow()" class="btn btn-green">🎬 نشر فيديو الآن</button>
+                <button onclick="previewVideo()" class="btn" style="background-color: #3f72af">👀 معاينة +
+                    توليد</button>
+            </div>
+            <div class="grid" style="margin-top:12px;">
+                <a class="btn" style="display:block; text-align:center; background:#2d6a4f; text-decoration:none;"
+                    href="/download_last" target="_blank">⬇️ تنزيل آخر فيديو</a>
+                <button onclick="refreshLogs()" class="btn" style="background-color: #3f72af">📜 تحديث السجلات</button>
+            </div>
+            <p id="actionResult" style="margin-top: 10px; color: #a2d2ff;"></p>
+            <div class="logs" id="logsBox" style="margin-top:10px;">جاهز…</div>
+        </div>
+
+        <!-- Content Management -->
+        <div class="card">
+            <h2>📝 إدارة المحتوى</h2>
+            <div class="form-group">
+                <label>إضافة جملة جديدة</label>
+                <textarea id="newQuote" rows="3" placeholder="اكتب حكمة جديدة هنا..."></textarea>
+            </div>
+            <div class="grid">
+                <button onclick="addQuote()" class="btn">إضافة للقائمة</button>
+                <button onclick="loadTexts()" class="btn" style="background:#3f72af">تحديث القائمة</button>
+            </div>
+            <p class="small">المصدر: <span id="textsFilePath" class="pill">غير معروف</span></p>
+            <div class="list" id="textsList"></div>
+        </div>
+
     </div>
 
-    <!-- Text Overlay Controls -->
-    <div class="card">
-        <h2>🧩 إعدادات النص على الفيديو</h2>
-        <div class="grid">
-            <div class="form-group">
-                <label>حجم الخط</label>
-                <input type="text" id="fontSize" placeholder="مثال: 70">
-            </div>
-            <div class="form-group">
-                <label>محاذاة</label>
-                <select id="textAlign" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                    <option value="center">وسط</option>
-                    <option value="left">يسار</option>
-                    <option value="right">يمين</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="grid">
-            <div class="form-group">
-                <label>لون النص (Hex)</label>
-                <input type="text" id="textColor" placeholder="#FFFFFF">
-            </div>
-            <div class="form-group">
-                <label>لون الظل (Hex)</label>
-                <input type="text" id="shadowColor" placeholder="#000000">
-            </div>
-        </div>
-
-        <div class="grid-3">
-            <div class="form-group">
-                <label>قوة الظل (px)</label>
-                <input type="text" id="shadowOffset" placeholder="2">
-            </div>
-            <div class="form-group">
-                <label>تباعد الأسطر (px)</label>
-                <input type="text" id="lineSpacing" placeholder="14">
-            </div>
-            <div class="form-group">
-                <label>عرض النص % من الفيديو</label>
-                <input type="text" id="maxWidthPct" placeholder="0.86">
-            </div>
-        </div>
-
-        <div class="grid">
-            <div class="form-group">
-                <label>وضع المكان</label>
-                <select id="positionMode" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;" onchange="togglePositionUI()">
-                    <option value="preset">جاهز (أعلى/وسط/أسفل)</option>
-                    <option value="manual">يدوي (X/Y)</option>
-                </select>
-            </div>
-            <div class="form-group" id="presetWrap">
-                <label>المكان الجاهز</label>
-                <select id="presetPos" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                    <option value="top">أعلى</option>
-                    <option value="center">وسط</option>
-                    <option value="bottom">أسفل</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="grid" id="manualWrap" style="display:none;">
-            <div class="form-group">
-                <label>X (0..1)</label>
-                <input type="text" id="xPct" placeholder="0.5">
-            </div>
-            <div class="form-group">
-                <label>Y (0..1)</label>
-                <input type="text" id="yPct" placeholder="0.5">
-            </div>
-        </div>
-
-        <button class="btn" onclick="saveOverlaySettings()">💾 حفظ إعدادات النص</button>
-        <p class="small">نصيحة: استخدم “معاينة” للتأكد من الموضع قبل النشر.</p>
-    </div>
-
-    <!-- Actions -->
-    <div class="card">
-        <h2>⚡ إجراءات سريعة</h2>
-        <div class="grid">
-            <button onclick="runNow()" class="btn btn-green">🎬 نشر فيديو الآن</button>
-            <button onclick="previewVideo()" class="btn" style="background-color: #3f72af">👀 معاينة + توليد</button>
-        </div>
-        <div class="grid" style="margin-top:12px;">
-            <a class="btn" style="display:block; text-align:center; background:#2d6a4f; text-decoration:none;" href="/download_last" target="_blank">⬇️ تنزيل آخر فيديو</a>
-            <button onclick="refreshLogs()" class="btn" style="background-color: #3f72af">📜 تحديث السجلات</button>
-        </div>
-        <p id="actionResult" style="margin-top: 10px; color: #a2d2ff;"></p>
-        <div class="logs" id="logsBox" style="margin-top:10px;">جاهز…</div>
-    </div>
-
-    <!-- Content Management -->
-    <div class="card">
-        <h2>📝 إدارة المحتوى</h2>
-        <div class="form-group">
-            <label>إضافة جملة جديدة</label>
-            <textarea id="newQuote" rows="3" placeholder="اكتب حكمة جديدة هنا..."></textarea>
-        </div>
-        <div class="grid">
-            <button onclick="addQuote()" class="btn">إضافة للقائمة</button>
-            <button onclick="loadTexts()" class="btn" style="background:#3f72af">تحديث القائمة</button>
-        </div>
-        <p class="small">المصدر: <span id="textsFilePath" class="pill">غير معروف</span></p>
-        <div class="list" id="textsList"></div>
-    </div>
-
-</div>
-
-<script>
-    // Load config on startup
-    fetch('/get_config')
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById('pageId').value = data.facebook_page_id || '';
-            document.getElementById('accessToken').value = data.facebook_access_token || '';
-            document.getElementById('scheduleTime').value = data.schedule_time || '09:00';
-            document.getElementById('isActive').value = data.is_active ? 'true' : 'false';
-            updateStatus(data.is_active);
-
-            // paths
-            document.getElementById('baseVideoPath').textContent = (data.paths && data.paths.base_video) ? data.paths.base_video : 'base.mp4';
-            document.getElementById('textsFilePath').textContent = (data.paths && data.paths.texts_file) ? data.paths.texts_file : 'texts.txt';
-
-            // publish targets (simple toggle for now)
-            const targets = data.publish_targets || { facebook: true, tiktok: false };
-            document.getElementById('targetFacebook').value = targets.facebook ? 'true' : 'false';
-            document.getElementById('targetTikTok').value = targets.tiktok ? 'true' : 'false';
-
-            // overlay
-            const o = data.text_overlay || {};
-            document.getElementById('fontSize').value = o.font_size ?? 70;
-            document.getElementById('textColor').value = o.color ?? '#FFFFFF';
-            document.getElementById('shadowColor').value = o.shadow_color ?? '#000000';
-            document.getElementById('shadowOffset').value = o.shadow_offset ?? 2;
-            document.getElementById('lineSpacing').value = o.line_spacing_px ?? 14;
-            document.getElementById('maxWidthPct').value = o.max_width_pct ?? 0.86;
-            document.getElementById('textAlign').value = (o.align || 'center').toLowerCase();
-            document.getElementById('positionMode').value = (o.position_mode || 'preset').toLowerCase();
-            document.getElementById('presetPos').value = (o.preset || 'center').toLowerCase();
-            document.getElementById('xPct').value = o.x_pct ?? 0.5;
-            document.getElementById('yPct').value = o.y_pct ?? 0.5;
-            togglePositionUI();
-
-            loadTexts();
-            refreshLogs();
-        });
-
-    document.getElementById('saveBtn').addEventListener('click', () => {
-        const data = {
-            facebook_page_id: document.getElementById('pageId').value,
-            facebook_access_token: document.getElementById('accessToken').value,
-            schedule_time: document.getElementById('scheduleTime').value,
-            is_active: document.getElementById('isActive').value === 'true',
-            publish_targets: {
-                facebook: document.getElementById('targetFacebook').value === 'true',
-                tiktok: document.getElementById('targetTikTok').value === 'true'
-            }
-        };
-
-        fetch('/save_config', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => {
-            alert('تم حفظ الإعدادات بنجاح!');
-            updateStatus(data.is_active);
-        });
-    });
-
-    function updateStatus(active) {
-        const el = document.getElementById('systemStatus');
-        if(active) {
-            el.textContent = 'نشط يعمل';
-            el.className = 'status-badge status-active';
-        } else {
-            el.textContent = 'متوقف';
-            el.className = 'status-badge status-inactive';
-        }
-    }
-
-    function runNow() {
-        if(!confirm('هل أنت متأكد أنك تريد نشر فيديو الآن فوراً؟')) return;
-        document.getElementById('actionResult').innerText = '⏳ جاري المعالجة...';
-        fetch('/run_now', {method: 'POST'})
+    <script>
+        // Load config on startup
+        fetch('/get_config')
             .then(r => r.json())
             .then(data => {
-                document.getElementById('actionResult').innerText = data.message;
-            }).catch(() => {
-                document.getElementById('actionResult').innerText = '❌ حدث خطأ';
-            });
-    }
+                document.getElementById('pageId').value = data.facebook_page_id || '';
+                document.getElementById('accessToken').value = data.facebook_access_token || '';
+                document.getElementById('scheduleTime').value = data.schedule_time || '09:00';
+                document.getElementById('isActive').value = data.is_active ? 'true' : 'false';
+                updateStatus(data.is_active);
 
-    function addQuote() {
-        const text = document.getElementById('newQuote').value;
-        if(!text) return;
-        fetch('/add_quote', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({text: text})
-        }).then(() => {
-            alert('تمت الإضافة!');
-            document.getElementById('newQuote').value = '';
-            loadTexts();
-        });
-    }
+                // paths
+                document.getElementById('baseVideoPath').textContent = (data.paths && data.paths.base_video) ? data.paths.base_video : 'base.mp4';
+                document.getElementById('textsFilePath').textContent = (data.paths && data.paths.texts_file) ? data.paths.texts_file : 'texts.txt';
 
-    function togglePositionUI(){
-        const mode = document.getElementById('positionMode').value;
-        document.getElementById('manualWrap').style.display = (mode === 'manual') ? 'grid' : 'none';
-        document.getElementById('presetWrap').style.display = (mode === 'preset') ? 'block' : 'none';
-    }
+                // publish targets (simple toggle for now)
+                const targets = data.publish_targets || { facebook: true, tiktok: false };
+                document.getElementById('targetFacebook').value = targets.facebook ? 'true' : 'false';
 
-    function saveOverlaySettings(){
-        const data = {
-            text_overlay: {
-                font_size: parseInt(document.getElementById('fontSize').value || '70', 10),
-                color: document.getElementById('textColor').value || '#FFFFFF',
-                shadow_color: document.getElementById('shadowColor').value || '#000000',
-                shadow_offset: parseInt(document.getElementById('shadowOffset').value || '2', 10),
-                line_spacing_px: parseInt(document.getElementById('lineSpacing').value || '14', 10),
-                max_width_pct: parseFloat(document.getElementById('maxWidthPct').value || '0.86'),
-                align: document.getElementById('textAlign').value,
-                position_mode: document.getElementById('positionMode').value,
-                preset: document.getElementById('presetPos').value,
-                x_pct: parseFloat(document.getElementById('xPct').value || '0.5'),
-                y_pct: parseFloat(document.getElementById('yPct').value || '0.5')
-            }
-        };
-        fetch('/save_config', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(() => {
-            alert('تم حفظ إعدادات النص!');
-        });
-    }
+                document.getElementById('targetTikTok').value = targets.tiktok ? 'true' : 'false';
+                document.getElementById('targetYouTube').value = targets.youtube ? 'true' : 'false';
 
-    function uploadBaseVideo(){
-        const file = document.getElementById('baseVideoFile').files[0];
-        if(!file){ alert('اختر ملف MP4 أولاً'); return; }
-        const fd = new FormData();
-        fd.append('file', file);
-        fetch('/upload_base_video', { method: 'POST', body: fd })
-            .then(r => r.json())
-            .then(res => {
-                if(res.status !== 'success'){ alert(res.message || 'فشل الرفع'); return; }
-                document.getElementById('baseVideoPath').textContent = res.base_video;
-                alert('تم رفع الفيديو بنجاح!');
-            }).catch(() => alert('فشل الرفع'));
-    }
+                // youtube details
+                const yt = data.youtube || {};
+                document.getElementById('ytClientId').value = yt.client_id || '';
+                document.getElementById('ytClientSecret').value = yt.client_secret || '';
 
-    function previewVideo(){
-        document.getElementById('actionResult').innerText = '⏳ جاري توليد المعاينة...';
-        fetch('/preview', { method: 'POST' })
-            .then(r => r.json())
-            .then(res => {
-                if(res.status !== 'success'){
-                    document.getElementById('actionResult').innerText = '❌ فشل التوليد: ' + (res.message || '');
-                    return;
+                // statuses
+                if (data.tiktok && data.tiktok.access_token) {
+                    const ts = document.getElementById('tiktokStatus');
+                    ts.textContent = 'متصل';
+                    ts.className = 'status-badge status-active';
+                    document.getElementById('tiktokOpenId').textContent = data.tiktok.open_id || '???';
                 }
-                document.getElementById('actionResult').innerText = '✅ تم توليد فيديو (آخر نص): ' + res.caption;
-            }).catch(() => {
-                document.getElementById('actionResult').innerText = '❌ حدث خطأ';
-            });
-    }
+                if (data.youtube && data.youtube.refresh_token) {
+                    const ys = document.getElementById('youtubeStatus');
+                    ys.textContent = 'متصل';
+                    ys.className = 'status-badge status-active';
+                }
 
-    function refreshLogs(){
-        fetch('/logs')
-            .then(r => r.json())
-            .then(res => {
-                const box = document.getElementById('logsBox');
-                const lines = (res.logs || []).slice(-80);
-                box.textContent = lines.length ? lines.join('\n') : 'لا يوجد سجلات بعد.';
-                box.scrollTop = box.scrollHeight;
-            });
-    }
+                // overlay
+                const o = data.text_overlay || {};
+                document.getElementById('fontSize').value = o.font_size ?? 70;
+                document.getElementById('textColor').value = o.color ?? '#FFFFFF';
+                document.getElementById('shadowColor').value = o.shadow_color ?? '#000000';
+                document.getElementById('shadowOffset').value = o.shadow_offset ?? 2;
+                document.getElementById('lineSpacing').value = o.line_spacing_px ?? 14;
+                document.getElementById('maxWidthPct').value = o.max_width_pct ?? 0.86;
+                document.getElementById('textAlign').value = (o.align || 'center').toLowerCase();
+                document.getElementById('positionMode').value = (o.position_mode || 'preset').toLowerCase();
+                document.getElementById('presetPos').value = (o.preset || 'center').toLowerCase();
+                document.getElementById('xPct').value = o.x_pct ?? 0.5;
+                document.getElementById('yPct').value = o.y_pct ?? 0.5;
+                togglePositionUI();
 
-    function loadTexts(){
-        fetch('/texts')
-            .then(r => r.json())
-            .then(res => {
-                document.getElementById('textsFilePath').textContent = res.file || 'texts.txt';
-                const list = document.getElementById('textsList');
-                list.innerHTML = '';
-                (res.texts || []).forEach((t, i) => {
-                    const row = document.createElement('div');
-                    row.className = 'row';
-                    const left = document.createElement('div');
-                    left.textContent = t;
-                    left.style.flex = '1';
-                    left.style.paddingLeft = '8px';
-                    const btn = document.createElement('button');
-                    btn.className = 'btn';
-                    btn.textContent = 'حذف';
-                    btn.style.background = '#e74c3c';
-                    btn.onclick = () => deleteText(i);
-                    row.appendChild(left);
-                    row.appendChild(btn);
-                    list.appendChild(row);
+                loadTexts();
+                refreshLogs();
+            });
+
+        function getUuidData() {
+            return {
+                facebook_page_id: document.getElementById('pageId').value,
+                facebook_access_token: document.getElementById('accessToken').value,
+                schedule_time: document.getElementById('scheduleTime').value,
+                is_active: document.getElementById('isActive').value === 'true',
+                publish_targets: {
+                    facebook: document.getElementById('targetFacebook').value === 'true',
+                    tiktok: document.getElementById('targetTikTok').value === 'true',
+                    youtube: document.getElementById('targetYouTube').value === 'true'
+                },
+                youtube: {
+                    client_id: document.getElementById('ytClientId').value,
+                    client_secret: document.getElementById('ytClientSecret').value
+                }
+            };
+        }
+
+        function saveAllSettings(showAlert = true) {
+            const data = getUuidData();
+            return fetch('/save_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => {
+                if (showAlert) alert('تم حفظ الإعدادات بنجاح!');
+                updateStatus(data.is_active);
+            });
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', () => saveAllSettings(true));
+
+        function updateStatus(active) {
+            const el = document.getElementById('systemStatus');
+            if (active) {
+                el.textContent = 'نشط يعمل';
+                el.className = 'status-badge status-active';
+            } else {
+                el.textContent = 'متوقف';
+                el.className = 'status-badge status-inactive';
+            }
+        }
+
+        function runNow() {
+            if (!confirm('هل أنت متأكد أنك تريد نشر فيديو الآن فوراً؟')) return;
+            document.getElementById('actionResult').innerText = '⏳ جاري المعالجة...';
+            fetch('/run_now', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('actionResult').innerText = data.message;
+                }).catch(() => {
+                    document.getElementById('actionResult').innerText = '❌ حدث خطأ';
                 });
-            });
-    }
+        }
 
-    function deleteText(index){
-        if(!confirm('حذف هذه الجملة؟')) return;
-        fetch('/delete_text', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ index })
-        }).then(() => loadTexts());
-    }
-</script>
+        function addQuote() {
+            const text = document.getElementById('newQuote').value;
+            if (!text) return;
+            fetch('/add_quote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            }).then(() => {
+                alert('تمت الإضافة!');
+                document.getElementById('newQuote').value = '';
+                loadTexts();
+            });
+        }
+
+        function togglePositionUI() {
+            const mode = document.getElementById('positionMode').value;
+            document.getElementById('manualWrap').style.display = (mode === 'manual') ? 'grid' : 'none';
+            document.getElementById('presetWrap').style.display = (mode === 'preset') ? 'block' : 'none';
+        }
+
+        function saveOverlaySettings() {
+            const data = {
+                text_overlay: {
+                    font_size: parseInt(document.getElementById('fontSize').value || '70', 10),
+                    color: document.getElementById('textColor').value || '#FFFFFF',
+                    shadow_color: document.getElementById('shadowColor').value || '#000000',
+                    shadow_offset: parseInt(document.getElementById('shadowOffset').value || '2', 10),
+                    line_spacing_px: parseInt(document.getElementById('lineSpacing').value || '14', 10),
+                    max_width_pct: parseFloat(document.getElementById('maxWidthPct').value || '0.86'),
+                    align: document.getElementById('textAlign').value,
+                    position_mode: document.getElementById('positionMode').value,
+                    preset: document.getElementById('presetPos').value,
+                    x_pct: parseFloat(document.getElementById('xPct').value || '0.5'),
+                    y_pct: parseFloat(document.getElementById('yPct').value || '0.5')
+                }
+            };
+            fetch('/save_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then(() => {
+                alert('تم حفظ إعدادات النص!');
+            });
+        }
+
+        function uploadBaseVideo() {
+            const file = document.getElementById('baseVideoFile').files[0];
+            if (!file) { alert('اختر ملف MP4 أولاً'); return; }
+            const fd = new FormData();
+            fd.append('file', file);
+            fetch('/upload_base_video', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status !== 'success') { alert(res.message || 'فشل الرفع'); return; }
+                    document.getElementById('baseVideoPath').textContent = res.base_video;
+                    alert('تم رفع الفيديو بنجاح!');
+                }).catch(() => alert('فشل الرفع'));
+        }
+
+        function previewVideo() {
+            document.getElementById('actionResult').innerText = '⏳ جاري توليد المعاينة...';
+            fetch('/preview', { method: 'POST' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status !== 'success') {
+                        document.getElementById('actionResult').innerText = '❌ فشل التوليد: ' + (res.message || '');
+                        return;
+                    }
+                    document.getElementById('actionResult').innerText = '✅ تم توليد فيديو (آخر نص): ' + res.caption;
+                }).catch(() => {
+                    document.getElementById('actionResult').innerText = '❌ حدث خطأ';
+                });
+        }
+
+        function refreshLogs() {
+            fetch('/logs')
+                .then(r => r.json())
+                .then(res => {
+                    const box = document.getElementById('logsBox');
+                    const lines = (res.logs || []).slice(-80);
+                    box.textContent = lines.length ? lines.join('\n') : 'لا يوجد سجلات بعد.';
+                    box.scrollTop = box.scrollHeight;
+                });
+        }
+
+        function loadTexts() {
+            fetch('/texts')
+                .then(r => r.json())
+                .then(res => {
+                    document.getElementById('textsFilePath').textContent = res.file || 'texts.txt';
+                    const list = document.getElementById('textsList');
+                    list.innerHTML = '';
+                    (res.texts || []).forEach((t, i) => {
+                        const row = document.createElement('div');
+                        row.className = 'row';
+                        const left = document.createElement('div');
+                        left.textContent = t;
+                        left.style.flex = '1';
+                        left.style.paddingLeft = '8px';
+                        const btn = document.createElement('button');
+                        btn.className = 'btn';
+                        btn.textContent = 'حذف';
+                        btn.style.background = '#e74c3c';
+                        btn.onclick = () => deleteText(i);
+                        row.appendChild(left);
+                        row.appendChild(btn);
+                        list.appendChild(row);
+                    });
+                });
+        }
+
+        function deleteText(index) {
+            if (!confirm('حذف هذه الجملة؟')) return;
+            fetch('/delete_text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index })
+            }).then(() => loadTexts());
+        }
+
+        async function connectTikTok() {
+            await saveAllSettings(false);
+            window.location.href = '/tiktok/login';
+        }
+        async function connectYouTube() {
+            await saveAllSettings(false);
+            window.location.href = '/youtube/login';
+        }
+    </script>
 
 </body>
+
 </html>
