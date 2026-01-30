@@ -193,17 +193,51 @@ def update_scheduler():
     scheduler.remove_all_jobs()
     
     if config.get('is_active') and config.get('schedule_time'):
-        hour, minute = config['schedule_time'].split(':')
-        scheduler.add_job(
-            scheduled_job, 
-            'cron', 
-            hour=hour, 
-            minute=minute,
-            id='daily_post'
-        )
-        add_log(f"📅 Job rescheduled for {hour}:{minute} daily.")
+        try:
+            # Parse time string (format: "HH:MM")
+            schedule_time = config['schedule_time'].strip()
+            if ':' not in schedule_time:
+                add_log(f"❌ Invalid schedule_time format: {schedule_time}. Expected HH:MM")
+                return
+            
+            hour_str, minute_str = schedule_time.split(':')
+            hour = int(hour_str)
+            minute = int(minute_str)
+            
+            # Validate time range
+            if hour < 0 or hour > 23:
+                add_log(f"❌ Invalid hour: {hour}. Must be 0-23")
+                return
+            if minute < 0 or minute > 59:
+                add_log(f"❌ Invalid minute: {minute}. Must be 0-59")
+                return
+            
+            # Add job with integer hour and minute
+            scheduler.add_job(
+                scheduled_job, 
+                'cron', 
+                hour=hour, 
+                minute=minute,
+                id='daily_post',
+                replace_existing=True,
+                misfire_grace_time=300  # Allow job to run up to 5 minutes late
+            )
+            add_log(f"✅ Job scheduled successfully for {hour:02d}:{minute:02d} daily (24h format)")
+            
+            # Log next run time
+            jobs = scheduler.get_jobs()
+            if jobs:
+                next_run = jobs[0].next_run_time
+                if next_run:
+                    add_log(f"⏰ Next scheduled run: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
+        except ValueError as e:
+            add_log(f"❌ Error parsing schedule_time '{config.get('schedule_time')}': {e}")
+        except Exception as e:
+            add_log(f"❌ Error scheduling job: {e}")
+            import traceback
+            add_log(f"📋 Traceback: {traceback.format_exc()}")
     else:
-        add_log("📅 No active jobs scheduled.")
+        add_log("📅 No active jobs scheduled (is_active=False or schedule_time not set).")
 
 def auth_required(f):
     @wraps(f)
@@ -420,9 +454,34 @@ def save_config():
             new_data["facebook_access_token"] = current_config.get("facebook_access_token", "")
         # If it's a real token, allow saving (user is setting it manually)
 
+    # Validate schedule_time format if provided
+    if "schedule_time" in new_data:
+        schedule_time = new_data["schedule_time"]
+        if schedule_time:
+            try:
+                # Validate time format (HH:MM)
+                if ':' not in str(schedule_time):
+                    return jsonify({"status": "error", "message": "تنسيق الوقت غير صحيح. استخدم HH:MM (مثال: 14:30)"}), 400
+                
+                hour_str, minute_str = str(schedule_time).split(':')
+                hour = int(hour_str)
+                minute = int(minute_str)
+                
+                if hour < 0 or hour > 23:
+                    return jsonify({"status": "error", "message": f"الساعة {hour} غير صحيحة. يجب أن تكون بين 0 و 23"}), 400
+                if minute < 0 or minute > 59:
+                    return jsonify({"status": "error", "message": f"الدقيقة {minute} غير صحيحة. يجب أن تكون بين 0 و 59"}), 400
+                
+                # Normalize format to HH:MM (with leading zeros)
+                new_data["schedule_time"] = f"{hour:02d}:{minute:02d}"
+            except ValueError as e:
+                return jsonify({"status": "error", "message": f"تنسيق الوقت غير صحيح: {schedule_time}. استخدم HH:MM"}), 400
+
     # Merge and save
     merged = deep_merge(current_config, new_data)
     save_config_file(merged)
+    
+    # Update scheduler immediately
     update_scheduler()
     
     # Log what was saved
@@ -442,6 +501,27 @@ def add_quote():
 @app.route('/logs')
 def logs():
     return jsonify({"logs": _LOGS[-200:]})
+
+@app.route('/get_schedule_info')
+def get_schedule_info():
+    """Get information about the current schedule"""
+    config = load_config()
+    jobs = scheduler.get_jobs()
+    
+    info = {
+        "is_active": config.get('is_active', False),
+        "schedule_time": config.get('schedule_time', '09:00'),
+        "next_run": None,
+        "has_job": len(jobs) > 0
+    }
+    
+    if jobs:
+        next_run = jobs[0].next_run_time
+        if next_run:
+            info["next_run"] = next_run.strftime('%Y-%m-%d %H:%M:%S')
+            info["next_run_iso"] = next_run.isoformat()
+    
+    return jsonify(info)
 
 @app.route('/texts')
 def list_texts():
