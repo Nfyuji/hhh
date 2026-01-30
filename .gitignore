@@ -1,0 +1,21 @@
+# Secrets & Config
+config.json
+client_secret*.json
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Media (Optional, but good practice to avoid bloat)
+uploads/
+output.mp4
+*.mp4
+*.avi
+*.mov
+
+# Logs
+*.log
