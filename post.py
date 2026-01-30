@@ -111,10 +111,27 @@ def load_texts(filepath):
     return lines
 
 def process_arabic_text(text):
-    """Reshape and reorder Arabic text for correct display."""
-    reshaped_text = arabic_reshaper.reshape(text)
-    bidi_text = get_display(reshaped_text)
-    return bidi_text
+    """
+    Reshape Arabic text for correct display in Pillow.
+    
+    The issue: get_display() reverses text for RTL->LTR conversion,
+    but this causes text to appear backwards in videos.
+    
+    Solution: Use reshape() only - this connects Arabic letters properly
+    without reversing the text order.
+    """
+    if not text:
+        return ""
+    try:
+        # Reshape Arabic characters (connects letters properly for display)
+        # We do NOT use get_display() because it reverses the text order
+        # which causes backwards display in videos
+        reshaped_text = arabic_reshaper.reshape(text)
+        return reshaped_text
+    except Exception as e:
+        # If processing fails, return original text
+        print(f"⚠️ Arabic text processing error: {e}")
+        return text
 
 def _wrap_text_to_width(draw, text, font, max_width_px):
     # Simple word-wrap by spaces (works fine for Arabic sentences too)
