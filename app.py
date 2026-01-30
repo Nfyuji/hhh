@@ -35,7 +35,7 @@ DEFAULT_CONFIG = {
         "token": None,
         "refresh_token": None,
         "token_uri": "https://oauth2.googleapis.com/token",
-        "redirect_uri": "http://127.0.0.1:5000/youtube/callback",
+        "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI"),
         "scopes": ["https://www.googleapis.com/auth/youtube.upload"],
     },
     "tiktok": {
