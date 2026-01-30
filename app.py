@@ -35,13 +35,13 @@ DEFAULT_CONFIG = {
         "token": None,
         "refresh_token": None,
         "token_uri": "https://oauth2.googleapis.com/token",
-        "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI"),
+        "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:5000/youtube/callback"),
         "scopes": ["https://www.googleapis.com/auth/youtube.upload"],
     },
     "tiktok": {
         "client_key": "awhp5vrjkh90twlf",
         "client_secret": "fYr1YvrUSzYc2SRkmeHqFJp5TWo6OIHv",
-        "redirect_uri": "http://127.0.0.1:5000/tiktok/callback", # Changed to HTTP for local test
+        "redirect_uri": os.getenv("TIKTOK_REDIRECT_URI", "http://127.0.0.1:5000/tiktok/callback"), # Changed to HTTP for local test
         "access_token": "",
         "refresh_token": "",
         "expires_at": 0,
