@@ -1,5 +1,6 @@
 import os
 import random
+import sys
 import arabic_reshaper
 from bidi.algorithm import get_display
 # NOTE: moviepy/Pillow/numpy are imported lazily inside generate_video()
@@ -9,8 +10,62 @@ from bidi.algorithm import get_display
 TEXTS_FILE = 'texts.txt'
 BASE_VIDEO = 'base.mp4'
 OUTPUT_VIDEO = 'output.mp4'
-FONT_PATH = 'C:\\Windows\\Fonts\\arial.ttf' # Standard Windows font
 FONT_SIZE = 70
+
+def find_font_path(font_name="arial.ttf"):
+    """
+    Find font file path across different operating systems.
+    Returns path to font or None if not found.
+    """
+    # Common font paths by OS
+    font_paths = []
+    
+    if sys.platform == "win32":
+        # Windows paths
+        windir = os.environ.get("WINDIR", "C:\\Windows")
+        font_paths = [
+            os.path.join(windir, "Fonts", font_name),
+            os.path.join(windir, "Fonts", "arial.ttf"),
+            os.path.join(windir, "Fonts", "Arial.ttf"),
+        ]
+    elif sys.platform in ("linux", "linux2"):
+        # Linux paths (Render uses Linux)
+        font_paths = [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/TTF/DejaVuSans.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/arial.ttf",
+            "/usr/share/fonts/TTF/arial.ttf",
+            # Try to find any TTF font
+            "/usr/share/fonts/truetype",
+        ]
+    elif sys.platform == "darwin":
+        # macOS paths
+        font_paths = [
+            "/Library/Fonts/Arial.ttf",
+            "/System/Library/Fonts/Helvetica.ttc",
+            os.path.expanduser("~/Library/Fonts/Arial.ttf"),
+        ]
+    
+    # Try each path
+    for path in font_paths:
+        if os.path.isfile(path):
+            return path
+        # If it's a directory, search for TTF files
+        if os.path.isdir(path):
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    if file.lower().endswith(('.ttf', '.otf')):
+                        full_path = os.path.join(root, file)
+                        if os.path.isfile(full_path):
+                            return full_path
+    
+    return None
+
+# Default font path - will be resolved at runtime
+FONT_PATH = find_font_path() or 'C:\\Windows\\Fonts\\arial.ttf'  # Fallback for Windows
 TEXT_COLOR = (255, 255, 255)
 SHADOW_COLOR = (0, 0, 0)
 VIDEO_DURATION = 10 # Seconds (if generating base video)
@@ -112,9 +167,20 @@ def create_text_image(text, size, font_path, font_size, color, shadow_color=(0, 
     while current_size >= int(min_font_size):
         try:
             font = ImageFont.truetype(font_path, current_size)
-        except IOError:
-            print(f"Warning: Font not found at {font_path}. Using default.")
-            font = ImageFont.load_default()
+        except (IOError, OSError) as e:
+            print(f"⚠️ Warning: Font not found at {font_path}: {e}")
+            # Try to find another font
+            found_font = find_font_path()
+            if found_font and found_font != font_path:
+                try:
+                    font = ImageFont.truetype(found_font, current_size)
+                    print(f"✅ Using alternative font: {found_font}")
+                except:
+                    print("⚠️ Using default font (may not support Arabic)")
+                    font = ImageFont.load_default()
+            else:
+                print("⚠️ Using default font (may not support Arabic)")
+                font = ImageFont.load_default()
 
         raw_lines = _wrap_text_to_width(draw, text, font, max_width_px=max_width_px)
         disp_lines, line_sizes, max_w, total_h = _measure_text_block(draw, raw_lines, font, line_spacing_px)
@@ -129,8 +195,16 @@ def create_text_image(text, size, font_path, font_size, color, shadow_color=(0, 
         if font is None:
             try:
                 font = ImageFont.truetype(font_path, int(min_font_size))
-            except IOError:
-                font = ImageFont.load_default()
+            except (IOError, OSError):
+                # Try alternative font
+                found_font = find_font_path()
+                if found_font:
+                    try:
+                        font = ImageFont.truetype(found_font, int(min_font_size))
+                    except:
+                        font = ImageFont.load_default()
+                else:
+                    font = ImageFont.load_default()
         raw_lines = raw_lines or _wrap_text_to_width(draw, text, font, max_width_px=max_width_px)
         disp_lines, line_sizes, _, total_h = _measure_text_block(draw, raw_lines, font, line_spacing_px)
 
@@ -186,7 +260,20 @@ def generate_video(config=None):
     fps = int(video_cfg.get("fps", 24))
     placeholder_bg = tuple(video_cfg.get("placeholder_bg_color", [20, 30, 60]))
 
-    font_path = text_cfg.get("font_path", FONT_PATH)
+    # Get font path from config, or find system font
+    config_font_path = text_cfg.get("font_path", "")
+    if config_font_path and os.path.exists(config_font_path):
+        font_path = config_font_path
+    else:
+        # Try to find font automatically
+        found_font = find_font_path()
+        if found_font:
+            font_path = found_font
+            print(f"✅ Using system font: {font_path}")
+        else:
+            # Fallback to default
+            font_path = FONT_PATH
+            print(f"⚠️ Using fallback font path: {font_path}")
     font_size = int(text_cfg.get("font_size", FONT_SIZE))
     min_font_size = int(text_cfg.get("min_font_size", 38))
     color = _hex_to_rgb(text_cfg.get("color"), fallback=TEXT_COLOR)
