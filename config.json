@@ -1,6 +1,7 @@
 {
     "SERVER_HOST": "127.0.0.1",
     "HTTPS_ENABLED": false,
+    "app_password": "admin",
     "facebook_page_id": "",
     "facebook_access_token": "",
     "publish_targets": {
@@ -10,17 +11,18 @@
     },
     "youtube": {
         "client_id": "698493191457-7g6qf855n6kcvt5l8m0lk2dceplbokik.apps.googleusercontent.com",
-        "client_secret": "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",
+        "client_secret": "",
         "token": "ya29.a0AUMWg_KHBOHRU1VuM7IkEFoVGM7KcvWlm8cqa88wswvRGtcJm08D5IuWHHlpx5CP2gMsTCbTxhOTa7PGrwbswK0b9bo8Md6ML5ac0rFQg2l_ZhTCP-4xbERENwUm_M7sg7W6KKQzQ-ebF1yu9VzitN586hc7jZnmrSzW97VuRpOPHfcNw3sKzJQFMYTiRF3PY-m4DKcaCgYKATcSARYSFQHGX2MiZEvV1Ja6hL4css0MrAGY5w0206",
         "refresh_token": "1//03MAC9KA1Vfx8CgYIARAAGAMSNwF-L9IrAItXl7arZ3VHNV4CellkNYD1SLzAsWF0AsrKi8hbwZJV7DFOHiehXAeozOpnXKQCqGk",
         "token_uri": "https://oauth2.googleapis.com/token",
+        "redirect_uri": "http://127.0.0.1:5000/youtube/callback",
         "scopes": [
             "https://www.googleapis.com/auth/youtube.upload"
         ]
     },
     "tiktok": {
-        "client_key": "awhp5vrjkh90twlf",
-        "client_secret": "fYr1YvrUSzYc2SRkmeHqFJp5TWo6OIHv",
+        "client_key": "",
+        "client_secret": "",
         "redirect_uri": "http://127.0.0.1:5000/tiktok/callback",
         "access_token": "",
         "refresh_token": "",

@@ -262,22 +262,99 @@ def get_base_url():
 def index():
     return render_template('index.html')
 
+@app.route('/manage/facebook')
+def manage_facebook():
+    """صفحة إدارة Facebook"""
+    return render_template('manage_facebook.html')
+
+@app.route('/manage/tiktok')
+def manage_tiktok():
+    """صفحة إدارة TikTok"""
+    return render_template('manage_tiktok.html')
+
+@app.route('/manage/youtube')
+def manage_youtube():
+    """صفحة إدارة YouTube"""
+    return render_template('manage_youtube.html')
+
+@app.route('/test/facebook', methods=['POST'])
+def test_facebook():
+    """اختبار الاتصال بـ Facebook API"""
+    try:
+        data = request.json
+        page_id = data.get('page_id')
+        access_token = data.get('access_token')
+        
+        if not page_id or not access_token:
+            return jsonify({"status": "error", "message": "Page ID و Access Token مطلوبان"}), 400
+        
+        import requests
+        # Test API call
+        url = f"https://graph.facebook.com/v18.0/{page_id}?fields=name,id&access_token={access_token}"
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            page_data = response.json()
+            return jsonify({
+                "status": "success",
+                "message": f"✅ الاتصال ناجح! الصفحة: {page_data.get('name', 'غير معروف')}"
+            })
+        else:
+            error_data = response.json() if response.content else {}
+            return jsonify({
+                "status": "error",
+                "message": f"❌ فشل الاتصال: {error_data.get('error', {}).get('message', 'خطأ غير معروف')}"
+            }), 400
+            
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"❌ خطأ: {str(e)}"}), 500
+
 @app.route('/api/base_url')
 def api_base_url():
     """API endpoint to get the base URL for the current environment."""
-    base_url = get_base_url()
-    is_render = bool(os.getenv("RENDER") or os.getenv("PORT"))
-    return jsonify({
-        "base_url": base_url,
-        "is_render": is_render,
-        "is_local": not is_render
-    })
+    try:
+        from flask import has_request_context, request as flask_request
+        
+        # Check if running on Render
+        is_render = bool(os.getenv("RENDER") or (os.getenv("PORT") and os.getenv("PORT") != "5000"))
+        
+        if is_render:
+            # Try to get from environment first
+            render_service_url = os.getenv("RENDER_EXTERNAL_URL")
+            if render_service_url:
+                base_url = render_service_url.rstrip('/')
+            elif has_request_context():
+                # Get from request
+                scheme = 'https' if flask_request.is_secure or os.getenv("HTTPS_ENABLED") == "true" else 'http'
+                host = flask_request.host
+                base_url = f"{scheme}://{host}"
+            else:
+                # Fallback
+                base_url = "https://hhh-ftzf.onrender.com"
+        else:
+            # Local
+            cfg = load_config()
+            if cfg.get("HTTPS_ENABLED"):
+                base_url = "https://127.0.0.1:5000"
+            else:
+                base_url = "http://127.0.0.1:5000"
+        
+        return jsonify({
+            "base_url": base_url,
+            "is_render": is_render,
+            "is_local": not is_render
+        })
+    except Exception as e:
+        # Fallback on error
+        return jsonify({
+            "base_url": "https://hhh-ftzf.onrender.com",
+            "is_render": True,
+            "is_local": False
+        })
 
 @app.route('/get_config')
 def get_config():
-    if not session.get('logged_in'):
-        return jsonify({"error": "Unauthorized"}), 401
-    
+    # Allow access without login for initial load, but protect sensitive operations
     cfg = load_config()
     
     # 🔒 SECURITY: Mask all sensitive data before sending to frontend
