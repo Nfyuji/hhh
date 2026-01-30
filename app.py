@@ -5,13 +5,16 @@ import time
 import base64
 import hashlib
 import secrets
-from flask import Flask, render_template, request, jsonify, send_file
+import secrets
+from functools import wraps
+from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
 import post  # Import our existing video logic
 import tiktok
 import youtube
 
 app = Flask(__name__)
+app.secret_key = secrets.token_hex(32)
 CONFIG_FILE = 'config.json'
 TEXTS_FILE = 'texts.txt'
 
@@ -22,6 +25,7 @@ scheduler.start()
 DEFAULT_CONFIG = {
     "SERVER_HOST": "127.0.0.1",
     "HTTPS_ENABLED": False, # Will be enabled by run.ps1 for TikTok OAuth
+    "app_password": "admin",
     "facebook_page_id": "",
     "facebook_access_token": "",
     "publish_targets": {"facebook": True, "tiktok": False, "youtube": False},
@@ -155,18 +159,76 @@ def update_scheduler():
     else:
         add_log("📅 No active jobs scheduled.")
 
+def auth_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return jsonify({"status": "error", "message": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/check_auth')
+def check_auth():
+    return jsonify({"logged_in": session.get('logged_in', False)})
+
+@app.route('/login', methods=['POST'])
+def login():
+    pwd = request.json.get('password')
+    cfg = load_config()
+    real_pwd = cfg.get('app_password', 'admin')
+    if pwd == real_pwd:
+        session['logged_in'] = True
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error", "message": "Incorrect password"}), 401
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect('/')
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/get_config')
 def get_config():
-    return jsonify(load_config())
+    if not session.get('logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    cfg = load_config()
+    # Mask sensitive data
+    if cfg.get("youtube", {}).get("client_secret"):
+        cfg["youtube"]["client_secret"] = "********"
+    
+    # Mask client ID partially if it exists
+    cid = cfg.get("youtube", {}).get("client_id", "")
+    if cid and len(cid) > 10:
+         cfg["youtube"]["client_id"] = cid[:5] + "..." + cid[-5:]
+    elif cid:
+         cfg["youtube"]["client_id"] = "********"
+
+    return jsonify(cfg)
 
 @app.route('/save_config', methods=['POST'])
 def save_config():
-    data = request.json
-    merged = deep_merge(load_config(), data or {})
+    if not session.get('logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    new_data = request.json
+    current_config = load_config()
+    
+    # Handle Masked YouTube Credentials
+    # Check Client ID
+    incoming_cid = new_data.get("youtube", {}).get("client_id", "")
+    if "***" in incoming_cid or incoming_cid == "********":
+        new_data["youtube"]["client_id"] = current_config.get("youtube", {}).get("client_id", "")
+        
+    # Check Client Secret
+    incoming_secret = new_data.get("youtube", {}).get("client_secret", "")
+    if incoming_secret == "********":
+        new_data["youtube"]["client_secret"] = current_config.get("youtube", {}).get("client_secret", "")
+
+    merged = deep_merge(current_config, new_data)
     save_config_file(merged)
     update_scheduler()
     return jsonify({"status": "success", "message": "Config saved"})
