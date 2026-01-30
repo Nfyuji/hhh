@@ -246,6 +246,17 @@ def generate_video(config=None):
             "Missing dependency: moviepy. Install it inside your venv with: "
             "python -m pip install moviepy"
         ) from e
+    
+    # Check FFmpeg availability (required by MoviePy)
+    try:
+        import imageio_ffmpeg
+        ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+        if not ffmpeg_path or not os.path.exists(ffmpeg_path):
+            print("⚠️ Warning: FFmpeg not found. Video processing may fail.")
+            print("   On Render, FFmpeg should be available via imageio-ffmpeg.")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not verify FFmpeg: {e}")
+        print("   Video processing may fail if FFmpeg is not available.")
 
     paths = (config or {}).get("paths") or {}
     video_cfg = (config or {}).get("video") or {}
@@ -347,8 +358,49 @@ def generate_video(config=None):
     
     # 5. Export
     print(f"💾 Exporting to {output_video}...")
-    final_video.write_videofile(output_video, codec='libx264', audio_codec='aac', fps=fps)
-    print("✅ Video generated successfully!")
+    try:
+        # Ensure output directory exists
+        output_dir = os.path.dirname(output_video) if os.path.dirname(output_video) else "."
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+            print(f"📁 Created output directory: {output_dir}")
+        
+        # Export with error handling
+        final_video.write_videofile(
+            output_video, 
+            codec='libx264', 
+            audio_codec='aac', 
+            fps=fps,
+            logger=None  # Suppress MoviePy verbose output
+        )
+        
+        if not os.path.exists(output_video):
+            raise RuntimeError(f"Video file was not created: {output_video}")
+        
+        file_size = os.path.getsize(output_video)
+        print(f"✅ Video generated successfully! Size: {file_size / 1024 / 1024:.2f} MB")
+    except Exception as e:
+        error_msg = f"❌ Failed to export video: {e}"
+        print(error_msg)
+        import traceback
+        print(f"📋 Traceback: {traceback.format_exc()}")
+        # Clean up on error
+        if os.path.exists(output_video):
+            try:
+                os.remove(output_video)
+            except:
+                pass
+        raise RuntimeError(error_msg) from e
+    finally:
+        # Clean up clips to free memory
+        try:
+            final_video.close()
+            if 'clip' in locals():
+                clip.close()
+            if 'txt_clip' in locals():
+                txt_clip.close()
+        except:
+            pass
     
     return selected_text
 
