@@ -97,15 +97,40 @@ def deep_merge(base, override):
             out[k] = v
     return out
 
+    return deep_merge(DEFAULT_CONFIG, data)
+
 def load_config():
     if not os.path.exists(CONFIG_FILE):
-        return dict(DEFAULT_CONFIG)
-    with open(CONFIG_FILE, 'r') as f:
-        try:
-            data = json.load(f)
-        except Exception:
-            data = {}
-    return deep_merge(DEFAULT_CONFIG, data)
+        data = {}
+    else:
+        with open(CONFIG_FILE, 'r') as f:
+            try:
+                data = json.load(f)
+            except Exception:
+                data = {}
+    
+    cfg = deep_merge(DEFAULT_CONFIG, data)
+
+    # 🔒 SECURITY: Prioritize Environment Variables (Render/Cloud)
+    # This ensures secrets are read from the environment if present, overriding config.json
+    
+    # YouTube
+    if os.getenv("YOUTUBE_CLIENT_ID"):
+        cfg["youtube"]["client_id"] = os.getenv("YOUTUBE_CLIENT_ID")
+    if os.getenv("YOUTUBE_CLIENT_SECRET"):
+        cfg["youtube"]["client_secret"] = os.getenv("YOUTUBE_CLIENT_SECRET")
+    if os.getenv("GOOGLE_REDIRECT_URI"):
+        cfg["youtube"]["redirect_uri"] = os.getenv("GOOGLE_REDIRECT_URI")
+        
+    # TikTok
+    if os.getenv("TIKTOK_CLIENT_KEY"):
+        cfg["tiktok"]["client_key"] = os.getenv("TIKTOK_CLIENT_KEY")
+    if os.getenv("TIKTOK_CLIENT_SECRET"):
+        cfg["tiktok"]["client_secret"] = os.getenv("TIKTOK_CLIENT_SECRET")
+    if os.getenv("TIKTOK_REDIRECT_URI"):
+        cfg["tiktok"]["redirect_uri"] = os.getenv("TIKTOK_REDIRECT_URI")
+
+    return cfg
 
 def save_config_file(data):
     with open(CONFIG_FILE, 'w') as f:
