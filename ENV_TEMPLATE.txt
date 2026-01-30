@@ -1,0 +1,31 @@
+# 🔒 Environment Variables Template
+# انسخ هذه المتغيرات وأضفها في Render Dashboard > Environment > Add Environment Variable
+
+# ============================================
+# 🔐 المفاتيح الحساسة (يجب إضافتها في Render Dashboard)
+# ============================================
+
+# Facebook
+FACEBOOK_PAGE_ID=your_facebook_page_id_here
+FACEBOOK_ACCESS_TOKEN=your_facebook_access_token_here
+
+# YouTube OAuth
+YOUTUBE_CLIENT_ID=your_youtube_client_id_here
+YOUTUBE_CLIENT_SECRET=your_youtube_client_secret_here
+GOOGLE_REDIRECT_URI=https://your-app-name.onrender.com/youtube/callback
+
+# TikTok OAuth
+TIKTOK_CLIENT_KEY=your_tiktok_client_key_here
+TIKTOK_CLIENT_SECRET=your_tiktok_client_secret_here
+TIKTOK_REDIRECT_URI=https://your-app-name.onrender.com/tiktok/callback
+
+# App Security
+APP_PASSWORD=your_secure_password_here
+
+# ============================================
+# 📝 ملاحظات:
+# ============================================
+# 1. لا ترفع ملف .env إلى Git (موجود في .gitignore)
+# 2. في Render: اذهب إلى Dashboard > Environment > Add Environment Variable
+# 3. أضف كل متغير من القائمة أعلاه
+# 4. بعد إضافة المتغيرات، أعد تشغيل الخدمة

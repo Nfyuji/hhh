@@ -5,7 +5,6 @@ import time
 import base64
 import hashlib
 import secrets
-import secrets
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -25,23 +24,23 @@ scheduler.start()
 DEFAULT_CONFIG = {
     "SERVER_HOST": "0.0.0.0",  # يسمح بالاستماع على أي IP
     "HTTPS_ENABLED": True,      # لأن Render يدعم https تلقائي
-    "app_password": "admin",
-    "facebook_page_id": "",
-    "facebook_access_token": "",
+    "app_password": os.getenv("APP_PASSWORD", "admin"),  # من Environment Variable
+    "facebook_page_id": os.getenv("FACEBOOK_PAGE_ID", ""),
+    "facebook_access_token": os.getenv("FACEBOOK_ACCESS_TOKEN", ""),
     "publish_targets": {"facebook": True, "tiktok": False, "youtube": True},
     "youtube": {
-        "client_id": os.getenv("GOOGLE_CLIENT_ID", "698493191457-7g6qf855n6kcvt5l8m0lk2dceplbokik.apps.googleusercontent.com"),
-        "client_secret": os.getenv("GOOGLE_CLIENT_SECRET", "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"),
+        "client_id": os.getenv("YOUTUBE_CLIENT_ID", ""),  # يجب أن يكون من Environment Variable
+        "client_secret": "",  # لا يُحفظ في config.json، فقط من Environment Variable
         "token": None,
         "refresh_token": None,
         "token_uri": "https://oauth2.googleapis.com/token",
-        "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI", "https://hhh-ftzf.onrender.com/youtube/callback"),
+        "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI", ""),
         "scopes": ["https://www.googleapis.com/auth/youtube.upload"],
     },
     "tiktok": {
-        "client_key": "awhp5vrjkh90twlf",
-        "client_secret": "fYr1YvrUSzYc2SRkmeHqFJp5TWo6OIHv",
-        "redirect_uri": os.getenv("TIKTOK_REDIRECT_URI", "http://127.0.0.1:5000/tiktok/callback"), # Changed to HTTP for local test
+        "client_key": os.getenv("TIKTOK_CLIENT_KEY", ""),  # يجب أن يكون من Environment Variable
+        "client_secret": "",  # لا يُحفظ في config.json، فقط من Environment Variable
+        "redirect_uri": os.getenv("TIKTOK_REDIRECT_URI", ""),
         "access_token": "",
         "refresh_token": "",
         "expires_at": 0,
@@ -97,8 +96,6 @@ def deep_merge(base, override):
             out[k] = v
     return out
 
-    return deep_merge(DEFAULT_CONFIG, data)
-
 def load_config():
     if not os.path.exists(CONFIG_FILE):
         data = {}
@@ -111,10 +108,16 @@ def load_config():
     
     cfg = deep_merge(DEFAULT_CONFIG, data)
 
-    # 🔒 SECURITY: Prioritize Environment Variables (Render/Cloud)
-    # This ensures secrets are read from the environment if present, overriding config.json
+    # 🔒 SECURITY: Environment Variables have HIGHEST priority (for Render/Cloud)
+    # المفاتيح الحساسة تُقرأ فقط من Environment Variables، وليس من config.json
     
-    # YouTube
+    # Facebook
+    if os.getenv("FACEBOOK_PAGE_ID"):
+        cfg["facebook_page_id"] = os.getenv("FACEBOOK_PAGE_ID")
+    if os.getenv("FACEBOOK_ACCESS_TOKEN"):
+        cfg["facebook_access_token"] = os.getenv("FACEBOOK_ACCESS_TOKEN")
+    
+    # YouTube - المفاتيح الحساسة من Environment Variables فقط
     if os.getenv("YOUTUBE_CLIENT_ID"):
         cfg["youtube"]["client_id"] = os.getenv("YOUTUBE_CLIENT_ID")
     if os.getenv("YOUTUBE_CLIENT_SECRET"):
@@ -122,19 +125,37 @@ def load_config():
     if os.getenv("GOOGLE_REDIRECT_URI"):
         cfg["youtube"]["redirect_uri"] = os.getenv("GOOGLE_REDIRECT_URI")
         
-    # TikTok
+    # TikTok - المفاتيح الحساسة من Environment Variables فقط
     if os.getenv("TIKTOK_CLIENT_KEY"):
         cfg["tiktok"]["client_key"] = os.getenv("TIKTOK_CLIENT_KEY")
     if os.getenv("TIKTOK_CLIENT_SECRET"):
         cfg["tiktok"]["client_secret"] = os.getenv("TIKTOK_CLIENT_SECRET")
     if os.getenv("TIKTOK_REDIRECT_URI"):
         cfg["tiktok"]["redirect_uri"] = os.getenv("TIKTOK_REDIRECT_URI")
+    
+    # App Password
+    if os.getenv("APP_PASSWORD"):
+        cfg["app_password"] = os.getenv("APP_PASSWORD")
 
     return cfg
 
 def save_config_file(data):
+    """Save config to file, but NEVER save sensitive secrets."""
+    # Create a copy to avoid modifying the original
+    safe_data = json.loads(json.dumps(data))  # Deep copy
+    
+    # 🔒 SECURITY: Remove sensitive secrets before saving
+    # These should ONLY come from Environment Variables
+    if "youtube" in safe_data:
+        safe_data["youtube"]["client_secret"] = ""  # Never save to file
+    if "tiktok" in safe_data:
+        safe_data["tiktok"]["client_secret"] = ""  # Never save to file
+        safe_data["tiktok"]["client_key"] = ""  # Never save to file (optional, but safer)
+    if "facebook_access_token" in safe_data:
+        safe_data["facebook_access_token"] = ""  # Never save to file
+    
     with open(CONFIG_FILE, 'w') as f:
-        json.dump(data, f, indent=4)
+        json.dump(safe_data, f, indent=4)
 
 def scheduled_job():
     """The job that runs automatically."""
@@ -211,9 +232,46 @@ def logout():
     session.pop('logged_in', None)
     return redirect('/')
 
+def get_base_url():
+    """Detect if running on Render or locally."""
+    from flask import has_request_context, request as flask_request
+    
+    # Check if running on Render (has RENDER environment variable or PORT from Render)
+    is_render = bool(os.getenv("RENDER") or (os.getenv("PORT") and os.getenv("PORT") != "5000"))
+    
+    if is_render:
+        # Get the service URL from environment
+        render_service_url = os.getenv("RENDER_EXTERNAL_URL")
+        if render_service_url:
+            return render_service_url.rstrip('/')
+        # Fallback: try to get from request if available
+        if has_request_context():
+            scheme = 'https' if flask_request.is_secure or os.getenv("HTTPS_ENABLED") == "true" else 'http'
+            host = flask_request.host
+            return f"{scheme}://{host}"
+        # Last fallback: construct from common Render pattern
+        return "https://hhh-ftzf.onrender.com"
+    
+    # Local development
+    cfg = load_config()
+    if cfg.get("HTTPS_ENABLED"):
+        return "https://127.0.0.1:5000"
+    return "http://127.0.0.1:5000"
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/base_url')
+def api_base_url():
+    """API endpoint to get the base URL for the current environment."""
+    base_url = get_base_url()
+    is_render = bool(os.getenv("RENDER") or os.getenv("PORT"))
+    return jsonify({
+        "base_url": base_url,
+        "is_render": is_render,
+        "is_local": not is_render
+    })
 
 @app.route('/get_config')
 def get_config():
@@ -221,16 +279,30 @@ def get_config():
         return jsonify({"error": "Unauthorized"}), 401
     
     cfg = load_config()
-    # Mask sensitive data
+    
+    # 🔒 SECURITY: Mask all sensitive data before sending to frontend
+    # Mask Facebook Access Token
+    if cfg.get("facebook_access_token"):
+        cfg["facebook_access_token"] = "********"
+    
+    # Mask YouTube credentials
     if cfg.get("youtube", {}).get("client_secret"):
         cfg["youtube"]["client_secret"] = "********"
-    
-    # Mask client ID partially if it exists
     cid = cfg.get("youtube", {}).get("client_id", "")
     if cid and len(cid) > 10:
-         cfg["youtube"]["client_id"] = cid[:5] + "..." + cid[-5:]
+        cfg["youtube"]["client_id"] = cid[:5] + "..." + cid[-5:]
     elif cid:
-         cfg["youtube"]["client_id"] = "********"
+        cfg["youtube"]["client_id"] = "********"
+    
+    # Mask TikTok credentials
+    if cfg.get("tiktok", {}).get("client_key"):
+        cfg["tiktok"]["client_key"] = "********"
+    if cfg.get("tiktok", {}).get("client_secret"):
+        cfg["tiktok"]["client_secret"] = "********"
+    
+    # Mask app password
+    if cfg.get("app_password"):
+        cfg["app_password"] = "********"
 
     return jsonify(cfg)
 
@@ -242,21 +314,34 @@ def save_config():
     new_data = request.json
     current_config = load_config()
     
+    # 🔒 SECURITY: Never save sensitive credentials from UI
     # Handle Masked YouTube Credentials
-    # Check Client ID
     incoming_cid = new_data.get("youtube", {}).get("client_id", "")
     if "***" in incoming_cid or incoming_cid == "********":
+        # Keep existing value (which comes from env var)
         new_data["youtube"]["client_id"] = current_config.get("youtube", {}).get("client_id", "")
         
-    # Check Client Secret
+    # Check Client Secret - NEVER save from UI
     incoming_secret = new_data.get("youtube", {}).get("client_secret", "")
-    if incoming_secret == "********":
-        new_data["youtube"]["client_secret"] = current_config.get("youtube", {}).get("client_secret", "")
+    if incoming_secret == "********" or incoming_secret:
+        # Always remove from save - must come from Environment Variable
+        new_data["youtube"]["client_secret"] = ""
+    
+    # 🔒 TikTok - Never save client_key or client_secret from UI
+    if "tiktok" in new_data:
+        new_data["tiktok"]["client_key"] = ""
+        new_data["tiktok"]["client_secret"] = ""
+    
+    # 🔒 Facebook Access Token - Never save from UI
+    if "facebook_access_token" in new_data and new_data["facebook_access_token"]:
+        # Only allow if it's masked or empty
+        if new_data["facebook_access_token"] != "********":
+            new_data["facebook_access_token"] = ""
 
     merged = deep_merge(current_config, new_data)
     save_config_file(merged)
     update_scheduler()
-    return jsonify({"status": "success", "message": "Config saved"})
+    return jsonify({"status": "success", "message": "Config saved (sensitive data protected)"})
 
 @app.route('/add_quote', methods=['POST'])
 def add_quote():
@@ -344,11 +429,20 @@ def tiktok_login():
     cfg = load_config()
     tiktok_cfg = cfg.get("tiktok") or {}
     client_key = tiktok_cfg.get("client_key")
-    redirect_uri = tiktok_cfg.get("redirect_uri")
     
-    if not client_key or not redirect_uri:
-        add_log("❌ TikTok login failed: Client Key or Redirect URI not set.")
-        return jsonify({"status": "error", "message": "TikTok Client Key or Redirect URI not set in config."}), 400
+    # Auto-detect redirect URI based on environment
+    base_url = get_base_url()
+    redirect_uri = f"{base_url}/tiktok/callback"
+    
+    # Override with environment variable if set
+    if os.getenv("TIKTOK_REDIRECT_URI"):
+        redirect_uri = os.getenv("TIKTOK_REDIRECT_URI")
+    elif tiktok_cfg.get("redirect_uri"):
+        redirect_uri = tiktok_cfg.get("redirect_uri")
+    
+    if not client_key:
+        add_log("❌ TikTok login failed: Client Key not set.")
+        return jsonify({"status": "error", "message": "TikTok Client Key not set in environment variables."}), 400
 
     # Generate PKCE code_verifier and code_challenge
     code_verifier = secrets.token_urlsafe(64)
@@ -357,6 +451,7 @@ def tiktok_login():
 
     # Store code_verifier in config for later use in callback
     cfg["tiktok"]["code_verifier"] = code_verifier
+    cfg["tiktok"]["redirect_uri"] = redirect_uri  # Save detected redirect URI
     save_config_file(cfg)
 
     # Scopes needed for Content Posting API: user.info.basic, video.publish, video.upload
@@ -450,6 +545,21 @@ def tiktok_callback():
 @app.route('/youtube/login')
 def youtube_login():
     cfg = load_config()
+    
+    # Auto-detect redirect URI based on environment
+    base_url = get_base_url()
+    redirect_uri = f"{base_url}/youtube/callback"
+    
+    # Override with environment variable if set
+    if os.getenv("GOOGLE_REDIRECT_URI"):
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    elif cfg.get("youtube", {}).get("redirect_uri"):
+        redirect_uri = cfg.get("youtube", {}).get("redirect_uri")
+    
+    # Update config with detected redirect URI
+    cfg["youtube"]["redirect_uri"] = redirect_uri
+    save_config_file(cfg)
+    
     state = "some_random_state" # Should be random
     try:
         auth_url = youtube.get_auth_url(cfg, state=state)
@@ -520,11 +630,26 @@ if __name__ == '__main__':
     update_scheduler()
     cfg = load_config()
     host = cfg.get("SERVER_HOST", "127.0.0.1")
-    port = 5000
-    if cfg.get("HTTPS_ENABLED"):
-        add_log(f"🚀 Web Interface running on https://{host}:{port}")
-        ssl_context = 'adhoc'
-    else:
-        add_log(f"🚀 Web Interface running on http://{host}:{port}")
+    # Render uses PORT environment variable, fallback to 5000 for local
+    port = int(os.getenv("PORT", 5000))
+    
+    # Detect environment
+    is_render = bool(os.getenv("RENDER") or os.getenv("PORT"))
+    
+    if is_render:
+        # On Render: HTTPS is automatic, no SSL context needed
+        add_log(f"🌐 Running on Render: https://{os.getenv('RENDER_EXTERNAL_URL', 'render.com')}")
+        add_log(f"🚀 Web Interface available on port {port}")
         ssl_context = None
-    app.run(debug=True, use_reloader=False, host=host, port=port, ssl_context=ssl_context)
+        # On Render, HTTPS_ENABLED should be True but we don't use ssl_context
+        # because Render handles HTTPS automatically
+    else:
+        # Local: use config setting
+        if cfg.get("HTTPS_ENABLED"):
+            add_log(f"🚀 Web Interface running on https://{host}:{port}")
+            ssl_context = 'adhoc'
+        else:
+            add_log(f"🚀 Web Interface running on http://{host}:{port}")
+            ssl_context = None
+    
+    app.run(debug=not is_render, use_reloader=False, host=host, port=port, ssl_context=ssl_context)

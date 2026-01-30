@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: facebook-video-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      # 🔒 هذه المتغيرات يجب إضافتها يدوياً في Render Dashboard
+      # لأنها حساسة ولا يجب أن تكون في ملف public
+      - key: FACEBOOK_PAGE_ID
+        sync: false
+      - key: FACEBOOK_ACCESS_TOKEN
+        sync: false
+      - key: YOUTUBE_CLIENT_ID
+        sync: false
+      - key: YOUTUBE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: TIKTOK_CLIENT_KEY
+        sync: false
+      - key: TIKTOK_CLIENT_SECRET
+        sync: false
+      - key: TIKTOK_REDIRECT_URI
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      # إعدادات عامة
+      - key: SERVER_HOST
+        value: 0.0.0.0
+      - key: HTTPS_ENABLED
+        value: true
+      - key: PORT
+        value: 10000
