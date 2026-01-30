@@ -159,33 +159,112 @@ def save_config_file(data):
 
 def scheduled_job():
     """The job that runs automatically."""
+    add_log("=" * 60)
     add_log("⏰ Scheduled job started!")
+    import traceback
+    
     config = load_config()
     if not config.get('is_active'):
         add_log("⏸ System inactive. Skipping.")
         return
 
+    # Step 1: Check prerequisites
+    add_log("📋 Checking prerequisites...")
+    paths = config.get("paths") or {}
+    base_video = paths.get("base_video", "base.mp4")
+    texts_file = paths.get("texts_file", "texts.txt")
+    output_video = paths.get("output_video", "output.mp4")
+    
+    if not os.path.exists(base_video):
+        error_msg = f"❌ Base video not found: {base_video}"
+        add_log(error_msg)
+        add_log("⏹ Scheduled job aborted.")
+        return
+    
+    if not os.path.exists(texts_file):
+        error_msg = f"❌ Texts file not found: {texts_file}"
+        add_log(error_msg)
+        add_log("⏹ Scheduled job aborted.")
+        return
+    
+    add_log(f"✅ Base video found: {base_video}")
+    add_log(f"✅ Texts file found: {texts_file}")
+
+    # Step 2: Generate video
+    add_log("🎬 Starting video generation...")
+    text = None
     try:
-        # Generate and Upload
         text = post.generate_video(config=config)
-        targets = config.get("publish_targets") or {}
-        if targets.get("facebook", True):
-            post.upload_to_facebook(text, config)
-        if targets.get("tiktok"):
-            try:
-                video_path = (config.get("paths") or {}).get("output_video", "output.mp4")
-                tiktok.upload_to_tiktok(text, config, video_path=video_path)
-            except Exception as e:
-                add_log(f"❌ TikTok upload failed: {e}")
-        if targets.get("youtube"):
-            try:
-                video_path = (config.get("paths") or {}).get("output_video", "output.mp4")
-                youtube.upload_video(title=text, description=text + " #shorts #quotes", file_path=video_path, config=config)
-            except Exception as e:
-                add_log(f"❌ YouTube upload failed: {e}")
-        add_log("✅ Scheduled Task Completed Successfully.")
+        add_log(f"✅ Video generated successfully! Caption: {text}")
+        
+        # Verify output video exists
+        if not os.path.exists(output_video):
+            error_msg = f"❌ Output video was not created: {output_video}"
+            add_log(error_msg)
+            add_log("⏹ Scheduled job aborted.")
+            return
+        
+        file_size = os.path.getsize(output_video)
+        add_log(f"✅ Output video verified: {output_video} ({file_size / 1024 / 1024:.2f} MB)")
     except Exception as e:
-        add_log(f"❌ Error in scheduled job: {e}")
+        error_trace = traceback.format_exc()
+        error_msg = f"❌ Video generation failed: {e}"
+        add_log(error_msg)
+        add_log(f"📋 Traceback: {error_trace}")
+        add_log("⏹ Scheduled job aborted.")
+        return
+
+    # Step 3: Upload to platforms
+    targets = config.get("publish_targets") or {}
+    upload_success = False
+    
+    # Facebook
+    if targets.get("facebook", True):
+        add_log("📘 Uploading to Facebook...")
+        try:
+            post.upload_to_facebook(text, config)
+            add_log("✅ Facebook upload completed!")
+            upload_success = True
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            add_log(f"❌ Facebook upload failed: {e}")
+            add_log(f"📋 Traceback: {error_trace}")
+    
+    # TikTok
+    if targets.get("tiktok"):
+        add_log("🎵 Uploading to TikTok...")
+        try:
+            tiktok.upload_to_tiktok(text, config, video_path=output_video)
+            add_log("✅ TikTok upload completed!")
+            upload_success = True
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            add_log(f"❌ TikTok upload failed: {e}")
+            add_log(f"📋 Traceback: {error_trace}")
+    
+    # YouTube
+    if targets.get("youtube"):
+        add_log("📺 Uploading to YouTube...")
+        try:
+            youtube.upload_video(
+                title=text, 
+                description=text + " #shorts #quotes", 
+                file_path=output_video, 
+                config=config
+            )
+            add_log("✅ YouTube upload completed!")
+            upload_success = True
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            add_log(f"❌ YouTube upload failed: {e}")
+            add_log(f"📋 Traceback: {error_trace}")
+    
+    # Final status
+    if upload_success:
+        add_log("✅ Scheduled Task Completed Successfully!")
+    else:
+        add_log("⚠️ Scheduled Task Completed with errors (no successful uploads)")
+    add_log("=" * 60)
 
 def update_scheduler():
     """Update job timing based on config"""
@@ -220,7 +299,9 @@ def update_scheduler():
                 minute=minute,
                 id='daily_post',
                 replace_existing=True,
-                misfire_grace_time=300  # Allow job to run up to 5 minutes late
+                misfire_grace_time=300,  # Allow job to run up to 5 minutes late
+                max_instances=1,  # Only one instance at a time
+                coalesce=True  # Combine multiple pending runs into one
             )
             add_log(f"✅ Job scheduled successfully for {hour:02d}:{minute:02d} daily (24h format)")
             
@@ -807,51 +888,20 @@ def youtube_callback():
 def run_now():
     # Run in separate thread to not block request
     def runner():
-        import traceback
-        config = load_config()
-        try:
-            add_log("🚀 Run now started...")
-            
-            # Check prerequisites
-            base_video = (config.get("paths") or {}).get("base_video", "base.mp4")
-            if not os.path.exists(base_video):
-                add_log(f"❌ Base video not found: {base_video}")
-                return
-            
-            texts_file = (config.get("paths") or {}).get("texts_file", "texts.txt")
-            if not os.path.exists(texts_file):
-                add_log(f"❌ Texts file not found: {texts_file}")
-                return
-            
-            add_log("📹 Generating video...")
-            text = post.generate_video(config=config)
-            
-            # Pass config explicitly so we don't need to save globally in post.py
-            targets = config.get("publish_targets") or {}
-            
-            if targets.get("facebook", True):
-                add_log("📘 Uploading to Facebook...")
-                post.upload_to_facebook(text, config)
-            
-            if targets.get("tiktok"):
-                add_log("🎵 Uploading to TikTok...")
-                video_path = (config.get("paths") or {}).get("output_video", "output.mp4")
-                tiktok.upload_to_tiktok(text, config, video_path=video_path)
-            
-            if targets.get("youtube"):
-                add_log("📺 Uploading to YouTube...")
-                video_path = (config.get("paths") or {}).get("output_video", "output.mp4")
-                youtube.upload_video(title=text, description=text + " #shorts #quotes", file_path=video_path, config=config)
-            
-            add_log("✅ Run now completed successfully!")
-        except Exception as e:
-            error_trace = traceback.format_exc()
-            add_log(f"❌ Run now error: {e}")
-            add_log(f"📋 Traceback: {error_trace}")
+        # Use the same scheduled_job function to ensure consistency
+        scheduled_job()
 
-    thread = threading.Thread(target=runner)
+    thread = threading.Thread(target=runner, daemon=True)
     thread.start()
     return jsonify({"status": "started", "message": "جاري النشر في الخلفية... راقب السجلات"})
+
+@app.route('/test_scheduled_job', methods=['POST'])
+def test_scheduled_job():
+    """Test the scheduled job function manually"""
+    add_log("🧪 Manual test of scheduled job triggered")
+    thread = threading.Thread(target=scheduled_job, daemon=True)
+    thread.start()
+    return jsonify({"status": "started", "message": "تم تشغيل المهمة المجدولة للاختبار... راقب السجلات"})
 
 if __name__ == '__main__':
     # Initial schedule setup
