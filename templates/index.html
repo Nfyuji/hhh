@@ -414,6 +414,10 @@
                     href="/download_last" target="_blank">⬇️ تنزيل آخر فيديو</a>
                 <button onclick="refreshLogs()" class="btn" style="background-color: #3f72af">📜 تحديث السجلات</button>
             </div>
+            <div style="margin-top:12px;">
+                <button onclick="testScheduledJob()" class="btn" style="background-color: #9b59b6">🧪 اختبار المهمة المجدولة</button>
+                <p class="small" style="margin-top:5px;">استخدم هذا الزر لاختبار المهمة المجدولة يدوياً (مفيد للتأكد من أن كل شيء يعمل)</p>
+            </div>
             <p id="actionResult" style="margin-top: 10px; color: #a2d2ff;"></p>
             <div class="logs" id="logsBox" style="margin-top:10px;">جاهز…</div>
         </div>
@@ -592,19 +596,38 @@
                 .then(r => r.json())
                 .then(info => {
                     const nextRunEl = document.getElementById('nextRunInfo');
-                    if (info.is_active && info.next_run) {
-                        nextRunEl.textContent = `⏰ النشر التالي: ${info.next_run}`;
+                    let statusText = '';
+                    
+                    if (!info.scheduler_running) {
+                        statusText = '⚠️ الـ Scheduler متوقف - المهمة لن تعمل!';
+                        nextRunEl.style.color = '#e74c3c';
+                    } else if (info.is_active && info.next_run) {
+                        const timeUntil = info.time_until ? ` (بعد ${info.time_until})` : '';
+                        statusText = `⏰ النشر التالي: ${info.next_run}${timeUntil}`;
                         nextRunEl.style.color = '#2ecc71';
+                    } else if (info.is_active && !info.has_job) {
+                        statusText = '⚠️ النشر مفعّل لكن لا توجد مهمة مجدولة!';
+                        nextRunEl.style.color = '#f39c12';
                     } else if (info.is_active) {
-                        nextRunEl.textContent = '⏳ جاري جدولة النشر...';
+                        statusText = '⏳ جاري جدولة النشر...';
                         nextRunEl.style.color = '#f39c12';
                     } else {
-                        nextRunEl.textContent = '⛔ النشر التلقائي متوقف';
+                        statusText = '⛔ النشر التلقائي متوقف';
                         nextRunEl.style.color = '#e74c3c';
                     }
+                    
+                    // Add timezone info
+                    if (info.timezone) {
+                        statusText += ` [${info.timezone}]`;
+                    }
+                    
+                    nextRunEl.textContent = statusText;
                 })
                 .catch(err => {
                     console.error('Error fetching schedule info:', err);
+                    const nextRunEl = document.getElementById('nextRunInfo');
+                    nextRunEl.textContent = '❌ خطأ في جلب معلومات الجدولة';
+                    nextRunEl.style.color = '#e74c3c';
                 });
         }
         
@@ -825,6 +848,20 @@
         async function connectYouTube() {
             await saveAllSettings(false);
             window.location.href = '/youtube/login';
+        }
+        
+        function testScheduledJob() {
+            if (!confirm('هل تريد تشغيل المهمة المجدولة للاختبار؟\n\nسيتم:\n1. توليد الفيديو\n2. رفعه على المنصات المحددة\n\nراقب السجلات لمعرفة النتيجة.')) return;
+            document.getElementById('actionResult').innerText = '⏳ جاري تشغيل المهمة المجدولة...';
+            fetch('/test_scheduled_job', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('actionResult').innerText = data.message || '✅ تم بدء الاختبار!';
+                    setTimeout(() => refreshLogs(), 2000);
+                })
+                .catch(() => {
+                    document.getElementById('actionResult').innerText = '❌ حدث خطأ';
+                });
         }
     </script>
 
