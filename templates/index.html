@@ -213,7 +213,12 @@
 
     <div class="container">
         <div class="header">
-            <h1>🚀 لوحة تحكم البوت</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h1 style="margin: 0;">🚀 لوحة تحكم البوت</h1>
+                <button onclick="logout()" class="btn" style="width: auto; padding: 8px 15px; background-color: #e74c3c;">
+                    🚪 تسجيل الخروج
+                </button>
+            </div>
             <p>إدارة نشر الفيديوهات التحفيزية تلقائيًا</p>
             <p class="small">اللوحة تعمل على: <a href="#" id="baseUrlLink" target="_blank" id="baseUrlDisplay">جاري التحميل...</a>
                 <span id="envBadge" class="pill" style="margin-right:10px;"></span>
@@ -239,15 +244,47 @@
                     <input type="text" id="accessToken" name="facebook_access_token" placeholder="EAA...">
                 </div>
 
-                <div class="grid">
                 <div class="form-group">
-                    <label>وقت النشر اليومي (24h)</label>
-                    <input type="time" id="scheduleTime" name="schedule_time" step="60">
-                    <p class="small" id="nextRunInfo" style="margin-top: 5px; color: #a2d2ff;"></p>
+                    <label>نوع الجدولة</label>
+                    <select id="scheduleType" onchange="toggleScheduleType()"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none; margin-bottom:10px;">
+                        <option value="daily">⏰ يومي (في وقت محدد كل يوم)</option>
+                        <option value="once">📅 مرة واحدة (بعد وقت محدد من الآن)</option>
+                    </select>
                 </div>
+                
+                <div id="dailySchedule" class="schedule-option">
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>وقت النشر اليومي (24h)</label>
+                            <input type="time" id="scheduleTime" name="schedule_time" step="60">
+                            <p class="small" id="nextRunInfo" style="margin-top: 5px; color: #a2d2ff;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label style="opacity: 0">تفعيل</label>
+                            <button type="button" id="saveBtn" class="btn">حفظ وتحديث المفاتيح</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="onceSchedule" class="schedule-option" style="display:none;">
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>بعد كم ساعة؟</label>
+                            <input type="number" id="hoursFromNow" min="0" max="168" value="2" placeholder="2"
+                                style="width:100%; padding:12px; border-radius:8px; background:#0f3460; color:white; border:2px solid #0f3460;">
+                        </div>
+                        <div class="form-group">
+                            <label>بعد كم دقيقة؟</label>
+                            <input type="number" id="minutesFromNow" min="0" max="59" value="0" placeholder="0"
+                                style="width:100%; padding:12px; border-radius:8px; background:#0f3460; color:white; border:2px solid #0f3460;">
+                        </div>
+                    </div>
                     <div class="form-group">
-                        <label style="opacity: 0">تفعيل</label>
-                        <button type="button" id="saveBtn" class="btn">حفظ وتحديث المفاتيح</button>
+                        <button type="button" onclick="scheduleOnce()" class="btn" style="background-color: #9b59b6;">
+                            📅 جدول نشر واحد بعد الوقت المحدد
+                        </button>
+                        <p class="small" id="onceScheduleInfo" style="margin-top: 5px; color: #a2d2ff;"></p>
                     </div>
                 </div>
                 <div class="form-group">
@@ -564,19 +601,25 @@
                     ys.className = 'status-badge status-inactive';
                 }
 
-                // overlay
+                // overlay - Only update if field is not focused (user not editing)
                 const o = data.text_overlay || {};
-                document.getElementById('fontSize').value = o.font_size ?? 70;
-                document.getElementById('textColor').value = o.color ?? '#FFFFFF';
-                document.getElementById('shadowColor').value = o.shadow_color ?? '#000000';
-                document.getElementById('shadowOffset').value = o.shadow_offset ?? 2;
-                document.getElementById('lineSpacing').value = o.line_spacing_px ?? 14;
-                document.getElementById('maxWidthPct').value = o.max_width_pct ?? 0.86;
-                document.getElementById('textAlign').value = (o.align || 'center').toLowerCase();
-                document.getElementById('positionMode').value = (o.position_mode || 'preset').toLowerCase();
-                document.getElementById('presetPos').value = (o.preset || 'center').toLowerCase();
-                document.getElementById('xPct').value = o.x_pct ?? 0.5;
-                document.getElementById('yPct').value = o.y_pct ?? 0.5;
+                const overlayFields = ['fontSize', 'textColor', 'shadowColor', 'shadowOffset', 'lineSpacing', 'maxWidthPct', 'textAlign', 'positionMode', 'presetPos', 'xPct', 'yPct'];
+                overlayFields.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (field && field !== document.activeElement) {
+                        if (fieldId === 'fontSize') field.value = o.font_size ?? 70;
+                        else if (fieldId === 'textColor') field.value = o.color ?? '#FFFFFF';
+                        else if (fieldId === 'shadowColor') field.value = o.shadow_color ?? '#000000';
+                        else if (fieldId === 'shadowOffset') field.value = o.shadow_offset ?? 2;
+                        else if (fieldId === 'lineSpacing') field.value = o.line_spacing_px ?? 14;
+                        else if (fieldId === 'maxWidthPct') field.value = o.max_width_pct ?? 0.86;
+                        else if (fieldId === 'textAlign') field.value = (o.align || 'center').toLowerCase();
+                        else if (fieldId === 'positionMode') field.value = (o.position_mode || 'preset').toLowerCase();
+                        else if (fieldId === 'presetPos') field.value = (o.preset || 'center').toLowerCase();
+                        else if (fieldId === 'xPct') field.value = o.x_pct ?? 0.5;
+                        else if (fieldId === 'yPct') field.value = o.y_pct ?? 0.5;
+                    }
+                });
                 togglePositionUI();
 
                 loadTexts();
@@ -638,6 +681,67 @@
         // Initial update
         updateScheduleInfo();
 
+        function toggleScheduleType() {
+            const scheduleType = document.getElementById('scheduleType').value;
+            const dailySchedule = document.getElementById('dailySchedule');
+            const onceSchedule = document.getElementById('onceSchedule');
+            
+            if (scheduleType === 'daily') {
+                dailySchedule.style.display = 'block';
+                onceSchedule.style.display = 'none';
+            } else {
+                dailySchedule.style.display = 'none';
+                onceSchedule.style.display = 'block';
+            }
+        }
+        
+        function scheduleOnce() {
+            const hours = parseInt(document.getElementById('hoursFromNow').value || '0', 10);
+            const minutes = parseInt(document.getElementById('minutesFromNow').value || '0', 10);
+            
+            if (hours < 0 || minutes < 0) {
+                alert('❌ القيم يجب أن تكون موجبة');
+                return;
+            }
+            
+            if (hours === 0 && minutes === 0) {
+                alert('❌ يجب تحديد وقت أكبر من 0');
+                return;
+            }
+            
+            // Calculate target time
+            const now = new Date();
+            const targetTime = new Date(now.getTime() + (hours * 60 + minutes) * 60 * 1000);
+            const targetTimeStr = targetTime.toISOString();
+            
+            const infoEl = document.getElementById('onceScheduleInfo');
+            infoEl.textContent = `⏰ سيتم النشر في: ${targetTime.toLocaleString('ar-SA')}`;
+            infoEl.style.color = '#2ecc71';
+            
+            // Schedule the job
+            fetch('/schedule_once', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    target_time: targetTimeStr,
+                    hours: hours,
+                    minutes: minutes
+                })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    alert('✅ تم جدولة النشر بنجاح!');
+                    setTimeout(() => refreshLogs(), 1000);
+                } else {
+                    alert('❌ فشل الجدولة: ' + (res.message || 'خطأ غير معروف'));
+                }
+            })
+            .catch(err => {
+                alert('❌ خطأ في الجدولة: ' + err.message);
+            });
+        }
+        
         function getUuidData() {
             return {
                 facebook_page_id: document.getElementById('pageId').value,
@@ -761,8 +865,15 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
-            }).then(r => r.json()).then(() => {
-                alert('تم حفظ إعدادات النص!');
+            }).then(r => r.json()).then((res) => {
+                if (res.status === 'success') {
+                    alert('✅ تم حفظ إعدادات النص بنجاح!');
+                    // Don't reload config immediately to preserve user's current edits
+                } else {
+                    alert('❌ فشل حفظ الإعدادات: ' + (res.message || 'خطأ غير معروف'));
+                }
+            }).catch(err => {
+                alert('❌ خطأ في حفظ الإعدادات: ' + err.message);
             });
         }
 
@@ -848,6 +959,12 @@
         async function connectYouTube() {
             await saveAllSettings(false);
             window.location.href = '/youtube/login';
+        }
+        
+        function logout() {
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+                window.location.href = '/logout';
+            }
         }
         
         function testScheduledJob() {
