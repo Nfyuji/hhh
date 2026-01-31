@@ -419,6 +419,10 @@ def get_base_url():
 
 @app.route('/')
 def index():
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        # Show login page
+        return render_template('login.html')
     return render_template('index.html')
 
 @app.route('/manage/facebook')
@@ -987,6 +991,69 @@ def scheduler_status():
         status["jobs"].append(job_info)
     
     return jsonify(status)
+
+@app.route('/schedule_once', methods=['POST'])
+def schedule_once():
+    """Schedule a one-time job at a specific time"""
+    try:
+        data = request.json
+        target_time_str = data.get('target_time')
+        hours = data.get('hours', 0)
+        minutes = data.get('minutes', 0)
+        
+        if not target_time_str:
+            return jsonify({"status": "error", "message": "الوقت المحدد مطلوب"}), 400
+        
+        # Parse target time
+        from datetime import datetime
+        if HAS_PYTZ:
+            target_time = datetime.fromisoformat(target_time_str.replace('Z', '+00:00'))
+            if target_time.tzinfo is None:
+                target_time = SCHEDULER_TIMEZONE.localize(target_time)
+        else:
+            target_time = datetime.fromisoformat(target_time_str.replace('Z', '+00:00'))
+            if target_time.tzinfo is None:
+                target_time = target_time.replace(tzinfo=SCHEDULER_TIMEZONE)
+        
+        # Check if time is in the past
+        current_time = datetime.now(SCHEDULER_TIMEZONE)
+        if target_time <= current_time:
+            return jsonify({"status": "error", "message": "الوقت المحدد في الماضي. اختر وقتاً في المستقبل"}), 400
+        
+        # Remove any existing one-time jobs
+        existing_jobs = scheduler.get_jobs()
+        for job in existing_jobs:
+            if job.id == 'once_post':
+                scheduler.remove_job('once_post')
+        
+        # Add new one-time job
+        scheduler.add_job(
+            scheduled_job,
+            'date',
+            run_date=target_time,
+            id='once_post',
+            replace_existing=True,
+            timezone=SCHEDULER_TIMEZONE
+        )
+        
+        time_until = target_time - current_time
+        hours_until = int(time_until.total_seconds() // 3600)
+        minutes_until = int((time_until.total_seconds() % 3600) // 60)
+        
+        add_log(f"📅 تم جدولة نشر واحد في: {target_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        add_log(f"⏳ الوقت المتبقي: {hours_until} ساعة و {minutes_until} دقيقة")
+        
+        return jsonify({
+            "status": "success",
+            "message": f"تم جدولة النشر بنجاح! سيتم النشر بعد {hours} ساعة و {minutes} دقيقة",
+            "target_time": target_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+        })
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        add_log(f"❌ Error scheduling one-time job: {e}")
+        add_log(f"📋 Traceback: {error_trace}")
+        return jsonify({"status": "error", "message": f"خطأ في الجدولة: {str(e)}"}), 500
 
 if __name__ == '__main__':
     # Initial schedule setup
