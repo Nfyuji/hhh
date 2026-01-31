@@ -18,8 +18,36 @@ CONFIG_FILE = 'config.json'
 TEXTS_FILE = 'texts.txt'
 
 # Scheduler setup
-scheduler = BackgroundScheduler()
+try:
+    from pytz import utc
+    import pytz
+    HAS_PYTZ = True
+except ImportError:
+    HAS_PYTZ = False
+    print("⚠️ Warning: pytz not installed. Install it with: pip install pytz")
+    # Fallback: use UTC from datetime if pytz is not available
+    from datetime import timezone
+    utc = timezone.utc
+
+# Get timezone - use UTC for consistency across servers
+# You can change this to your local timezone if needed (e.g., 'Asia/Riyadh' for Saudi time)
+# Note: The time you set in the UI should match this timezone
+try:
+    if HAS_PYTZ:
+        SCHEDULER_TIMEZONE = pytz.timezone('UTC')  # UTC timezone
+        # Uncomment the line below and comment the line above if you want to use Saudi time
+        # SCHEDULER_TIMEZONE = pytz.timezone('Asia/Riyadh')  # Saudi Arabia timezone
+    else:
+        # Fallback to UTC timezone from datetime
+        SCHEDULER_TIMEZONE = timezone.utc
+except Exception as e:
+    print(f"⚠️ Warning: Could not set timezone, using UTC: {e}")
+    SCHEDULER_TIMEZONE = utc if HAS_PYTZ else timezone.utc
+
+scheduler = BackgroundScheduler(timezone=SCHEDULER_TIMEZONE)
 scheduler.start()
+# Note: add_log will be defined later, so we use print here
+print(f"⏰ Scheduler started with timezone: {SCHEDULER_TIMEZONE}")
 
 DEFAULT_CONFIG = {
     "SERVER_HOST": "0.0.0.0",  # يسمح بالاستماع على أي IP
@@ -292,25 +320,41 @@ def update_scheduler():
                 return
             
             # Add job with integer hour and minute
+            # Use timezone explicitly to ensure correct scheduling
             scheduler.add_job(
                 scheduled_job, 
                 'cron', 
                 hour=hour, 
                 minute=minute,
+                timezone=SCHEDULER_TIMEZONE,
                 id='daily_post',
                 replace_existing=True,
                 misfire_grace_time=300,  # Allow job to run up to 5 minutes late
                 max_instances=1,  # Only one instance at a time
                 coalesce=True  # Combine multiple pending runs into one
             )
-            add_log(f"✅ Job scheduled successfully for {hour:02d}:{minute:02d} daily (24h format)")
+            add_log(f"✅ Job scheduled successfully for {hour:02d}:{minute:02d} daily (24h format, timezone: {SCHEDULER_TIMEZONE})")
             
-            # Log next run time
+            # Log next run time and current time for debugging
+            from datetime import datetime
+            current_time = datetime.now(SCHEDULER_TIMEZONE)
+            add_log(f"🕐 Current server time: {current_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+            
             jobs = scheduler.get_jobs()
             if jobs:
                 next_run = jobs[0].next_run_time
                 if next_run:
-                    add_log(f"⏰ Next scheduled run: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
+                    add_log(f"⏰ Next scheduled run: {next_run.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+                    # Calculate time until next run
+                    time_until = next_run - current_time
+                    if time_until.total_seconds() > 0:
+                        hours = int(time_until.total_seconds() // 3600)
+                        minutes = int((time_until.total_seconds() % 3600) // 60)
+                        add_log(f"⏳ Time until next run: {hours}h {minutes}m")
+                else:
+                    add_log("⚠️ Warning: Job scheduled but next_run_time is None")
+            else:
+                add_log("⚠️ Warning: No jobs found after scheduling")
         except ValueError as e:
             add_log(f"❌ Error parsing schedule_time '{config.get('schedule_time')}': {e}")
         except Exception as e:
@@ -589,18 +633,32 @@ def get_schedule_info():
     config = load_config()
     jobs = scheduler.get_jobs()
     
+    from datetime import datetime
+    current_time = datetime.now(SCHEDULER_TIMEZONE)
+    
     info = {
         "is_active": config.get('is_active', False),
         "schedule_time": config.get('schedule_time', '09:00'),
         "next_run": None,
-        "has_job": len(jobs) > 0
+        "has_job": len(jobs) > 0,
+        "current_time": current_time.strftime('%Y-%m-%d %H:%M:%S %Z'),
+        "scheduler_running": scheduler.running,
+        "timezone": str(SCHEDULER_TIMEZONE)
     }
     
     if jobs:
         next_run = jobs[0].next_run_time
         if next_run:
-            info["next_run"] = next_run.strftime('%Y-%m-%d %H:%M:%S')
+            info["next_run"] = next_run.strftime('%Y-%m-%d %H:%M:%S %Z')
             info["next_run_iso"] = next_run.isoformat()
+            # Calculate time until next run
+            time_until = next_run - current_time
+            if time_until.total_seconds() > 0:
+                hours = int(time_until.total_seconds() // 3600)
+                minutes = int((time_until.total_seconds() % 3600) // 60)
+                info["time_until"] = f"{hours}h {minutes}m"
+            else:
+                info["time_until"] = "Overdue or running now"
     
     return jsonify(info)
 
@@ -902,6 +960,33 @@ def test_scheduled_job():
     thread = threading.Thread(target=scheduled_job, daemon=True)
     thread.start()
     return jsonify({"status": "started", "message": "تم تشغيل المهمة المجدولة للاختبار... راقب السجلات"})
+
+@app.route('/scheduler_status')
+def scheduler_status():
+    """Get detailed scheduler status"""
+    jobs = scheduler.get_jobs()
+    from datetime import datetime
+    current_time = datetime.now(SCHEDULER_TIMEZONE)
+    
+    status = {
+        "scheduler_running": scheduler.running,
+        "scheduler_state": scheduler.state,
+        "timezone": str(SCHEDULER_TIMEZONE),
+        "current_time": current_time.strftime('%Y-%m-%d %H:%M:%S %Z'),
+        "jobs_count": len(jobs),
+        "jobs": []
+    }
+    
+    for job in jobs:
+        job_info = {
+            "id": job.id,
+            "name": job.name,
+            "next_run": job.next_run_time.strftime('%Y-%m-%d %H:%M:%S %Z') if job.next_run_time else None,
+            "trigger": str(job.trigger)
+        }
+        status["jobs"].append(job_info)
+    
+    return jsonify(status)
 
 if __name__ == '__main__':
     # Initial schedule setup
