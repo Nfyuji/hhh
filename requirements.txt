@@ -1,5 +1,6 @@
 Flask
 APScheduler
+pytz
 moviepy
 requests
 Pillow
