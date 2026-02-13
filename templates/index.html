@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدير بوت التحفيز الذكي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --accent: #e94560;
+            --text-main: #ffffff;
+            --text-sec: #0f3460;
+            --success: #2ecc71;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            background: -webkit-linear-gradient(45deg, #e94560, #a2d2ff);
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #a2d2ff;
+        }
+
+        input[type="text"],
+        input[type="time"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #0f3460;
+            background-color: #0f3460;
+            color: white;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-green {
+            background-color: var(--success);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+
+        .status-active {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+        }
+
+        .status-inactive {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logs {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            height: 150px;
+            overflow-y: auto;
+            color: #2ecc71;
+            font-size: 0.9rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        .small {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.85rem;
+        }
+
+        .list {
+            max-height: 220px;
+            overflow: auto;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .row button {
+            width: auto;
+            padding: 8px 12px;
+        }
+
+        @media (max-width: 600px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h1 style="margin: 0;">🚀 لوحة تحكم البوت</h1>
+                <button onclick="logout()" class="btn" style="width: auto; padding: 8px 15px; background-color: #e74c3c;">
+                    🚪 تسجيل الخروج
+                </button>
+            </div>
+            <p>إدارة نشر الفيديوهات التحفيزية تلقائيًا</p>
+            <p class="small">اللوحة تعمل على: <a href="#" id="baseUrlLink" target="_blank" id="baseUrlDisplay">جاري التحميل...</a>
+                <span id="envBadge" class="pill" style="margin-right:10px;"></span>
+            </p>
+        </div>
+
+        <!-- Status & Config -->
+        <div class="card">
+            <div class="toggle-switch">
+                <div>
+                    <h2>⚙️ الإعدادات العامة</h2>
+                    <p>حالة النظام: <span id="systemStatus" class="status-badge status-inactive">متوقف</span></p>
+                </div>
+            </div>
+
+            <form id="configForm">
+                <div class="form-group">
+                    <label>معرف الصفحة (Page ID)</label>
+                    <input type="text" id="pageId" name="facebook_page_id" placeholder="مثال: 1000872635...">
+                </div>
+                <div class="form-group">
+                    <label>رمز الوصول (Access Token)</label>
+                    <input type="text" id="accessToken" name="facebook_access_token" placeholder="EAA...">
+                </div>
+
+                <div class="form-group">
+                    <label>نوع الجدولة</label>
+                    <select id="scheduleType" onchange="toggleScheduleType()"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none; margin-bottom:10px;">
+                        <option value="daily">⏰ يومي (في وقت محدد كل يوم)</option>
+                        <option value="once">📅 مرة واحدة (بعد وقت محدد من الآن)</option>
+                    </select>
+                </div>
+                
+                <div id="dailySchedule" class="schedule-option">
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>وقت النشر اليومي (24h)</label>
+                            <input type="time" id="scheduleTime" name="schedule_time" step="60">
+                            <p class="small" id="nextRunInfo" style="margin-top: 5px; color: #a2d2ff;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label style="opacity: 0">تفعيل</label>
+                            <button type="button" id="saveBtn" class="btn">حفظ وتحديث المفاتيح</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="onceSchedule" class="schedule-option" style="display:none;">
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>بعد كم ساعة؟</label>
+                            <input type="number" id="hoursFromNow" min="0" max="168" value="2" placeholder="2"
+                                style="width:100%; padding:12px; border-radius:8px; background:#0f3460; color:white; border:2px solid #0f3460;">
+                        </div>
+                        <div class="form-group">
+                            <label>بعد كم دقيقة؟</label>
+                            <input type="number" id="minutesFromNow" min="0" max="59" value="0" placeholder="0"
+                                style="width:100%; padding:12px; border-radius:8px; background:#0f3460; color:white; border:2px solid #0f3460;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" onclick="scheduleOnce()" class="btn" style="background-color: #9b59b6;">
+                            📅 جدول نشر واحد بعد الوقت المحدد
+                        </button>
+                        <p class="small" id="onceScheduleInfo" style="margin-top: 5px; color: #a2d2ff;"></p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>تفعيل النشر التلقائي؟</label>
+                    <select id="isActive" name="is_active"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                        <option value="false">⛔ إيقاف المؤقت</option>
+                        <option value="true">✅ تشغيل المؤقت</option>
+                    </select>
+                </div>
+
+                <!-- Platform Management Links -->
+                <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; margin-bottom: 20px;">
+                    <h2 style="margin-top: 0; color: white;">🌐 إدارة المنصات</h2>
+                    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.9);">إدارة إعدادات كل منصة بشكل منفصل</p>
+                    <div class="grid">
+                        <a href="/manage/facebook" class="btn" style="background-color:#1877f2; text-decoration:none; display:block; text-align:center;">
+                            <i class="fab fa-facebook"></i> إدارة Facebook
+                        </a>
+                        <a href="/manage/tiktok" class="btn" style="background-color:#00f2ea; color:#000; text-decoration:none; display:block; text-align:center;">
+                            <i class="fab fa-tiktok"></i> إدارة TikTok
+                        </a>
+                        <a href="/manage/youtube" class="btn" style="background-color:#ff0000; text-decoration:none; display:block; text-align:center;">
+                            <i class="fab fa-youtube"></i> إدارة YouTube
+                        </a>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label>النشر على Facebook؟</label>
+                        <select id="targetFacebook"
+                            style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                            <option value="true">✅ نعم</option>
+                            <option value="false">⛔ لا</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>النشر على TikTok؟</label>
+                        <select id="targetTikTok"
+                            style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                            <option value="false">⛔ لا</option>
+                            <option value="true">✅ نعم</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>النشر على YouTube؟</label>
+                        <select id="targetYouTube"
+                            style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                            <option value="false">⛔ لا</option>
+                            <option value="true">✅ نعم</option>
+                        </select>
+                    </div>
+                </div>
+
+
+            </form>
+        </div>
+
+        <!-- Upload Base Video -->
+        <div class="card">
+            <h2>🎞️ فيديو الأساس</h2>
+            <p class="small">ارفع فيديو (MP4) ليكون الخلفية التي نضع عليها النص. سيتم حفظه باسم ثابت داخل المشروع.</p>
+            <div class="form-group">
+                <label>رفع base.mp4</label>
+                <input type="file" id="baseVideoFile" accept="video/mp4"
+                    style="width:100%; padding:12px; border-radius:8px; background:#0f3460; color:white; border:none;">
+            </div>
+            <button class="btn" onclick="uploadBaseVideo()">⬆️ رفع الفيديو</button>
+            <p class="small">الحالي: <span id="baseVideoPath" class="pill">غير معروف</span></p>
+        </div>
+
+        <!-- Text Overlay Controls -->
+        <div class="card">
+            <h2>🧩 إعدادات النص على الفيديو</h2>
+            <div class="grid">
+                <div class="form-group">
+                    <label>حجم الخط</label>
+                    <input type="text" id="fontSize" placeholder="مثال: 45" value="45">
+                </div>
+                <div class="form-group">
+                    <label>محاذاة</label>
+                    <select id="textAlign"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                        <option value="center">وسط</option>
+                        <option value="left">يسار</option>
+                        <option value="right">يمين</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label>لون النص (Hex)</label>
+                    <input type="text" id="textColor" placeholder="#FFFFFF">
+                </div>
+                <div class="form-group">
+                    <label>لون الظل (Hex)</label>
+                    <input type="text" id="shadowColor" placeholder="#000000">
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>قوة الظل (px)</label>
+                    <input type="text" id="shadowOffset" placeholder="2">
+                </div>
+                <div class="form-group">
+                    <label>تباعد الأسطر (px)</label>
+                    <input type="text" id="lineSpacing" placeholder="14">
+                </div>
+                <div class="form-group">
+                    <label>عرض النص % من الفيديو</label>
+                    <input type="text" id="maxWidthPct" placeholder="0.86">
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label>وضع المكان</label>
+                    <select id="positionMode"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;"
+                        onchange="togglePositionUI()">
+                        <option value="preset">جاهز (أعلى/وسط/أسفل)</option>
+                        <option value="manual">يدوي (X/Y)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="presetWrap">
+                    <label>المكان الجاهز</label>
+                    <select id="presetPos"
+                        style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                        <option value="top">أعلى</option>
+                        <option value="center">وسط</option>
+                        <option value="bottom">أسفل</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid" id="manualWrap" style="display:none;">
+                <div class="form-group">
+                    <label>X (0..1)</label>
+                    <input type="text" id="xPct" placeholder="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Y (0..1)</label>
+                    <input type="text" id="yPct" placeholder="0.5">
+                </div>
+            </div>
+
+            <button class="btn" onclick="saveOverlaySettings()">💾 حفظ إعدادات النص</button>
+            <p class="small">نصيحة: استخدم “معاينة” للتأكد من الموضع قبل النشر.</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="card">
+            <h2>⚡ إجراءات سريعة</h2>
+            <div class="grid">
+                <button onclick="runNow()" class="btn btn-green">🎬 نشر فيديو الآن</button>
+                <button onclick="previewVideo()" class="btn" style="background-color: #3f72af">👀 معاينة +
+                    توليد</button>
+            </div>
+            <div class="grid" style="margin-top:12px;">
+                <a class="btn" style="display:block; text-align:center; background:#2d6a4f; text-decoration:none;"
+                    href="/download_last" target="_blank">⬇️ تنزيل آخر فيديو</a>
+                <button onclick="refreshLogs()" class="btn" style="background-color: #3f72af">📜 تحديث السجلات</button>
+            </div>
+            <div style="margin-top:12px;">
+                <button onclick="testScheduledJob()" class="btn" style="background-color: #9b59b6">🧪 اختبار المهمة المجدولة</button>
+                <p class="small" style="margin-top:5px;">استخدم هذا الزر لاختبار المهمة المجدولة يدوياً (مفيد للتأكد من أن كل شيء يعمل)</p>
+            </div>
+            <p id="actionResult" style="margin-top: 10px; color: #a2d2ff;"></p>
+            <div class="logs" id="logsBox" style="margin-top:10px;">جاهز…</div>
+        </div>
+
+        <!-- Content Management -->
+        <div class="card">
+            <h2>📝 إدارة المحتوى</h2>
+            <div class="form-group">
+                <label>إضافة جملة جديدة</label>
+                <textarea id="newQuote" rows="3" placeholder="اكتب حكمة جديدة هنا..."></textarea>
+            </div>
+            <div class="grid">
+                <button onclick="addQuote()" class="btn">إضافة للقائمة</button>
+                <button onclick="loadTexts()" class="btn" style="background:#3f72af">تحديث القائمة</button>
+            </div>
+            <p class="small">المصدر: <span id="textsFilePath" class="pill">غير معروف</span></p>
+            <div class="list" id="textsList"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // Detect environment and update UI
+        let baseUrl = '';
+        let isRender = false;
+        
+        // Function to update base URL display
+        function updateBaseUrl() {
+            fetch('/api/base_url')
+                .then(r => {
+                    if (!r.ok) throw new Error('Failed to fetch');
+                    return r.json();
+                })
+                .then(env => {
+                    baseUrl = env.base_url || window.location.origin;
+                    isRender = env.is_render || false;
+                    const linkEl = document.getElementById('baseUrlLink');
+                    const displayEl = document.getElementById('baseUrlDisplay');
+                    const badgeEl = document.getElementById('envBadge');
+                    
+                    if (linkEl) linkEl.href = baseUrl;
+                    if (displayEl) displayEl.textContent = baseUrl;
+                    
+                    if (badgeEl) {
+                        if (isRender) {
+                            badgeEl.textContent = '🌐 Render';
+                            badgeEl.style.background = 'rgba(0, 242, 234, 0.2)';
+                            badgeEl.style.borderColor = '#00f2ea';
+                        } else {
+                            badgeEl.textContent = '💻 محلي';
+                            badgeEl.style.background = 'rgba(162, 210, 255, 0.2)';
+                            badgeEl.style.borderColor = '#a2d2ff';
+                        }
+                    }
+                })
+                .catch(() => {
+                    // Fallback
+                    baseUrl = window.location.origin;
+                    const linkEl = document.getElementById('baseUrlLink');
+                    const displayEl = document.getElementById('baseUrlDisplay');
+                    if (linkEl) linkEl.href = baseUrl;
+                    if (displayEl) displayEl.textContent = baseUrl;
+                });
+        }
+        
+        // Load base URL on startup
+        updateBaseUrl();
+        
+        // Function to load and update config
+        function loadConfig() {
+            fetch('/get_config')
+                .then(r => {
+                    if (!r.ok) {
+                        console.error('Failed to load config:', r.status);
+                        return {};
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    if (!data || data.error) {
+                        console.error('Config error:', data.error || 'Unknown error');
+                        return;
+                    }
+                document.getElementById('pageId').value = data.facebook_page_id || '';
+                document.getElementById('accessToken').value = data.facebook_access_token || '';
+                
+                // Only update schedule time if input is not focused (user not editing)
+                const scheduleTimeInput = document.getElementById('scheduleTime');
+                if (scheduleTimeInput !== document.activeElement) {
+                    const newTime = data.schedule_time || '09:00';
+                    // Normalize time format to HH:MM
+                    if (newTime && newTime.includes(':')) {
+                        const [h, m] = newTime.split(':');
+                        scheduleTimeInput.value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                    } else {
+                        scheduleTimeInput.value = newTime;
+                    }
+                }
+                
+                document.getElementById('isActive').value = data.is_active ? 'true' : 'false';
+                updateStatus(data.is_active);
+                
+                // Update schedule info after loading config
+                updateScheduleInfo();
+
+                // paths
+                document.getElementById('baseVideoPath').textContent = (data.paths && data.paths.base_video) ? data.paths.base_video : 'base.mp4';
+                document.getElementById('textsFilePath').textContent = (data.paths && data.paths.texts_file) ? data.paths.texts_file : 'texts.txt';
+
+                // publish targets (simple toggle for now)
+                const targets = data.publish_targets || { facebook: true, tiktok: false };
+                document.getElementById('targetFacebook').value = targets.facebook ? 'true' : 'false';
+
+                document.getElementById('targetTikTok').value = targets.tiktok ? 'true' : 'false';
+                document.getElementById('targetYouTube').value = targets.youtube ? 'true' : 'false';
+
+                // youtube details
+
+
+                // statuses - Update connection status
+                // TikTok
+                const ts = document.getElementById('tiktokStatus');
+                if (data.tiktok && data.tiktok.access_token) {
+                    if (ts) {
+                        ts.textContent = 'متصل';
+                        ts.className = 'status-badge status-active';
+                    }
+                    const openIdEl = document.getElementById('tiktokOpenId');
+                    if (openIdEl) openIdEl.textContent = data.tiktok.open_id || '???';
+                } else if (ts) {
+                    ts.textContent = 'غير متصل';
+                    ts.className = 'status-badge status-inactive';
+                }
+                
+                // YouTube
+                const ys = document.getElementById('youtubeStatus');
+                if (data.youtube && (data.youtube.refresh_token || data.youtube.token)) {
+                    if (ys) {
+                        ys.textContent = 'متصل';
+                        ys.className = 'status-badge status-active';
+                    }
+                } else if (ys) {
+                    ys.textContent = 'غير متصل';
+                    ys.className = 'status-badge status-inactive';
+                }
+
+                // overlay - Only update if field is not focused (user not editing)
+                const o = data.text_overlay || {};
+                const overlayFields = ['fontSize', 'textColor', 'shadowColor', 'shadowOffset', 'lineSpacing', 'maxWidthPct', 'textAlign', 'positionMode', 'presetPos', 'xPct', 'yPct'];
+                overlayFields.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (field && field !== document.activeElement) {
+                        if (fieldId === 'fontSize') field.value = o.font_size ?? 45;
+                        else if (fieldId === 'textColor') field.value = o.color ?? '#FFFFFF';
+                        else if (fieldId === 'shadowColor') field.value = o.shadow_color ?? '#000000';
+                        else if (fieldId === 'shadowOffset') field.value = o.shadow_offset ?? 2;
+                        else if (fieldId === 'lineSpacing') field.value = o.line_spacing_px ?? 14;
+                        else if (fieldId === 'maxWidthPct') field.value = o.max_width_pct ?? 0.86;
+                        else if (fieldId === 'textAlign') field.value = (o.align || 'center').toLowerCase();
+                        else if (fieldId === 'positionMode') field.value = (o.position_mode || 'preset').toLowerCase();
+                        else if (fieldId === 'presetPos') field.value = (o.preset || 'center').toLowerCase();
+                        else if (fieldId === 'xPct') field.value = o.x_pct ?? 0.5;
+                        else if (fieldId === 'yPct') field.value = o.y_pct ?? 0.5;
+                    }
+                });
+                togglePositionUI();
+
+                loadTexts();
+                refreshLogs();
+                })
+                .catch(err => {
+                    console.error('Error loading config:', err);
+                });
+        }
+        
+        // Load config on startup
+        loadConfig();
+        
+        // Function to update schedule info
+        function updateScheduleInfo() {
+            fetch('/get_schedule_info')
+                .then(r => r.json())
+                .then(info => {
+                    const nextRunEl = document.getElementById('nextRunInfo');
+                    let statusText = '';
+                    
+                    if (!info.scheduler_running) {
+                        statusText = '⚠️ الـ Scheduler متوقف - المهمة لن تعمل!';
+                        nextRunEl.style.color = '#e74c3c';
+                    } else if (info.is_active && info.next_run) {
+                        const timeUntil = info.time_until ? ` (بعد ${info.time_until})` : '';
+                        statusText = `⏰ النشر التالي: ${info.next_run}${timeUntil}`;
+                        nextRunEl.style.color = '#2ecc71';
+                    } else if (info.is_active && !info.has_job) {
+                        statusText = '⚠️ النشر مفعّل لكن لا توجد مهمة مجدولة!';
+                        nextRunEl.style.color = '#f39c12';
+                    } else if (info.is_active) {
+                        statusText = '⏳ جاري جدولة النشر...';
+                        nextRunEl.style.color = '#f39c12';
+                    } else {
+                        statusText = '⛔ النشر التلقائي متوقف';
+                        nextRunEl.style.color = '#e74c3c';
+                    }
+                    
+                    // Add timezone info
+                    if (info.timezone) {
+                        statusText += ` [${info.timezone}]`;
+                    }
+                    
+                    nextRunEl.textContent = statusText;
+                })
+                .catch(err => {
+                    console.error('Error fetching schedule info:', err);
+                    const nextRunEl = document.getElementById('nextRunInfo');
+                    nextRunEl.textContent = '❌ خطأ في جلب معلومات الجدولة';
+                    nextRunEl.style.color = '#e74c3c';
+                });
+        }
+        
+        // Auto-refresh config every 5 seconds to update connection status
+        setInterval(loadConfig, 5000);
+        // Update schedule info every 10 seconds
+        setInterval(updateScheduleInfo, 10000);
+        // Initial update
+        updateScheduleInfo();
+
+        function toggleScheduleType() {
+            const scheduleType = document.getElementById('scheduleType').value;
+            const dailySchedule = document.getElementById('dailySchedule');
+            const onceSchedule = document.getElementById('onceSchedule');
+            
+            if (scheduleType === 'daily') {
+                dailySchedule.style.display = 'block';
+                onceSchedule.style.display = 'none';
+            } else {
+                dailySchedule.style.display = 'none';
+                onceSchedule.style.display = 'block';
+            }
+        }
+        
+        function scheduleOnce() {
+            const hours = parseInt(document.getElementById('hoursFromNow').value || '0', 10);
+            const minutes = parseInt(document.getElementById('minutesFromNow').value || '0', 10);
+            
+            if (hours < 0 || minutes < 0) {
+                alert('❌ القيم يجب أن تكون موجبة');
+                return;
+            }
+            
+            if (hours === 0 && minutes === 0) {
+                alert('❌ يجب تحديد وقت أكبر من 0');
+                return;
+            }
+            
+            // Calculate target time
+            const now = new Date();
+            const targetTime = new Date(now.getTime() + (hours * 60 + minutes) * 60 * 1000);
+            const targetTimeStr = targetTime.toISOString();
+            
+            const infoEl = document.getElementById('onceScheduleInfo');
+            infoEl.textContent = `⏰ سيتم النشر في: ${targetTime.toLocaleString('ar-SA')}`;
+            infoEl.style.color = '#2ecc71';
+            
+            // Schedule the job
+            fetch('/schedule_once', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    target_time: targetTimeStr,
+                    hours: hours,
+                    minutes: minutes
+                })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    alert('✅ تم جدولة النشر بنجاح!');
+                    setTimeout(() => refreshLogs(), 1000);
+                } else {
+                    alert('❌ فشل الجدولة: ' + (res.message || 'خطأ غير معروف'));
+                }
+            })
+            .catch(err => {
+                alert('❌ خطأ في الجدولة: ' + err.message);
+            });
+        }
+        
+        function getUuidData() {
+            return {
+                facebook_page_id: document.getElementById('pageId').value,
+                facebook_access_token: document.getElementById('accessToken').value,
+                schedule_time: document.getElementById('scheduleTime').value,
+                is_active: document.getElementById('isActive').value === 'true',
+                publish_targets: {
+                    facebook: document.getElementById('targetFacebook').value === 'true',
+                    tiktok: document.getElementById('targetTikTok').value === 'true',
+                    youtube: document.getElementById('targetYouTube').value === 'true'
+                },
+
+            };
+        }
+
+        function saveAllSettings(showAlert = true) {
+            const data = getUuidData();
+            console.log('Saving data:', data); // Debug
+            
+            // Validate schedule time before sending
+            const scheduleTime = data.schedule_time;
+            if (scheduleTime) {
+                const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+                if (!timeRegex.test(scheduleTime)) {
+                    alert('❌ تنسيق الوقت غير صحيح. استخدم HH:MM (مثال: 14:30)');
+                    return Promise.reject(new Error('Invalid time format'));
+                }
+            }
+            
+            return fetch('/save_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(r => {
+                if (!r.ok) {
+                    return r.json().then(err => {
+                        throw new Error(err.message || err.error || 'فشل الحفظ');
+                    });
+                }
+                return r.json();
+            })
+            .then(res => {
+                if (res.status === 'success') {
+                    if (showAlert) alert('✅ ' + (res.message || 'تم حفظ الإعدادات بنجاح!'));
+                    updateStatus(data.is_active);
+                    // Reload config to show updated values (but preserve focused inputs)
+                    setTimeout(() => loadConfig(), 500);
+                } else {
+                    throw new Error(res.message || 'فشل الحفظ');
+                }
+            })
+            .catch(err => {
+                console.error('Save error:', err);
+                alert('❌ خطأ: ' + err.message);
+            });
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', () => saveAllSettings(true));
+
+        function updateStatus(active) {
+            const el = document.getElementById('systemStatus');
+            if (active) {
+                el.textContent = 'نشط يعمل';
+                el.className = 'status-badge status-active';
+            } else {
+                el.textContent = 'متوقف';
+                el.className = 'status-badge status-inactive';
+            }
+        }
+
+        function runNow() {
+            if (!confirm('هل أنت متأكد أنك تريد نشر فيديو الآن فوراً؟')) return;
+            document.getElementById('actionResult').innerText = '⏳ جاري المعالجة...';
+            fetch('/run_now', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('actionResult').innerText = data.message;
+                }).catch(() => {
+                    document.getElementById('actionResult').innerText = '❌ حدث خطأ';
+                });
+        }
+
+        function addQuote() {
+            const text = document.getElementById('newQuote').value;
+            if (!text) return;
+            fetch('/add_quote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            }).then(() => {
+                alert('تمت الإضافة!');
+                document.getElementById('newQuote').value = '';
+                loadTexts();
+            });
+        }
+
+        function togglePositionUI() {
+            const mode = document.getElementById('positionMode').value;
+            document.getElementById('manualWrap').style.display = (mode === 'manual') ? 'grid' : 'none';
+            document.getElementById('presetWrap').style.display = (mode === 'preset') ? 'block' : 'none';
+        }
+
+        function saveOverlaySettings() {
+            const data = {
+                text_overlay: {
+                    font_size: parseInt(document.getElementById('fontSize').value || '45', 10),
+                    color: document.getElementById('textColor').value || '#FFFFFF',
+                    shadow_color: document.getElementById('shadowColor').value || '#000000',
+                    shadow_offset: parseInt(document.getElementById('shadowOffset').value || '2', 10),
+                    line_spacing_px: parseInt(document.getElementById('lineSpacing').value || '14', 10),
+                    max_width_pct: parseFloat(document.getElementById('maxWidthPct').value || '0.86'),
+                    align: document.getElementById('textAlign').value,
+                    position_mode: document.getElementById('positionMode').value,
+                    preset: document.getElementById('presetPos').value,
+                    x_pct: parseFloat(document.getElementById('xPct').value || '0.5'),
+                    y_pct: parseFloat(document.getElementById('yPct').value || '0.5')
+                }
+            };
+            fetch('/save_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(r => r.json()).then((res) => {
+                if (res.status === 'success') {
+                    alert('✅ تم حفظ إعدادات النص بنجاح!');
+                    // Don't reload config immediately to preserve user's current edits
+                } else {
+                    alert('❌ فشل حفظ الإعدادات: ' + (res.message || 'خطأ غير معروف'));
+                }
+            }).catch(err => {
+                alert('❌ خطأ في حفظ الإعدادات: ' + err.message);
+            });
+        }
+
+        function uploadBaseVideo() {
+            const file = document.getElementById('baseVideoFile').files[0];
+            if (!file) { alert('اختر ملف MP4 أولاً'); return; }
+            const fd = new FormData();
+            fd.append('file', file);
+            fetch('/upload_base_video', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status !== 'success') { alert(res.message || 'فشل الرفع'); return; }
+                    document.getElementById('baseVideoPath').textContent = res.base_video;
+                    alert('تم رفع الفيديو بنجاح!');
+                }).catch(() => alert('فشل الرفع'));
+        }
+
+        function previewVideo() {
+            document.getElementById('actionResult').innerText = '⏳ جاري توليد المعاينة...';
+            fetch('/preview', { method: 'POST' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status !== 'success') {
+                        document.getElementById('actionResult').innerText = '❌ فشل التوليد: ' + (res.message || '');
+                        return;
+                    }
+                    // Display the quote prominently
+                    const resultText = '✅ تم توليد الفيديو بنجاح!\n\n📝 المقولة المستخدمة:\n"' + res.caption + '"\n\n💾 يمكنك تنزيل الفيديو من زر "تنزيل آخر فيديو"';
+                    document.getElementById('actionResult').innerText = resultText;
+                    document.getElementById('actionResult').style.whiteSpace = 'pre-line';
+                    document.getElementById('actionResult').style.padding = '15px';
+                    document.getElementById('actionResult').style.background = 'rgba(46, 204, 113, 0.1)';
+                    document.getElementById('actionResult').style.border = '1px solid #2ecc71';
+                    document.getElementById('actionResult').style.borderRadius = '8px';
+                    document.getElementById('actionResult').style.color = '#2ecc71';
+                }).catch(() => {
+                    document.getElementById('actionResult').innerText = '❌ حدث خطأ';
+                });
+        }
+
+        function refreshLogs() {
+            fetch('/logs')
+                .then(r => r.json())
+                .then(res => {
+                    const box = document.getElementById('logsBox');
+                    const lines = (res.logs || []).slice(-80);
+                    box.textContent = lines.length ? lines.join('\n') : 'لا يوجد سجلات بعد.';
+                    box.scrollTop = box.scrollHeight;
+                });
+        }
+
+        function loadTexts() {
+            fetch('/texts')
+                .then(r => r.json())
+                .then(res => {
+                    document.getElementById('textsFilePath').textContent = res.file || 'texts.txt';
+                    const list = document.getElementById('textsList');
+                    list.innerHTML = '';
+                    (res.texts || []).forEach((t, i) => {
+                        const row = document.createElement('div');
+                        row.className = 'row';
+                        const left = document.createElement('div');
+                        left.textContent = t;
+                        left.style.flex = '1';
+                        left.style.paddingLeft = '8px';
+                        const btn = document.createElement('button');
+                        btn.className = 'btn';
+                        btn.textContent = 'حذف';
+                        btn.style.background = '#e74c3c';
+                        btn.onclick = () => deleteText(i);
+                        row.appendChild(left);
+                        row.appendChild(btn);
+                        list.appendChild(row);
+                    });
+                });
+        }
+
+        function deleteText(index) {
+            if (!confirm('حذف هذه الجملة؟')) return;
+            fetch('/delete_text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index })
+            }).then(() => loadTexts());
+        }
+
+        async function connectTikTok() {
+            await saveAllSettings(false);
+            window.location.href = '/tiktok/login';
+        }
+        async function connectYouTube() {
+            await saveAllSettings(false);
+            window.location.href = '/youtube/login';
+        }
+        
+        function logout() {
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+                window.location.href = '/logout';
+            }
+        }
+        
+        function testScheduledJob() {
+            if (!confirm('هل تريد تشغيل المهمة المجدولة للاختبار؟\n\nسيتم:\n1. توليد الفيديو\n2. رفعه على المنصات المحددة\n\nراقب السجلات لمعرفة النتيجة.')) return;
+            document.getElementById('actionResult').innerText = '⏳ جاري تشغيل المهمة المجدولة...';
+            fetch('/test_scheduled_job', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('actionResult').innerText = data.message || '✅ تم بدء الاختبار!';
+                    setTimeout(() => refreshLogs(), 2000);
+                })
+                .catch(() => {
+                    document.getElementById('actionResult').innerText = '❌ حدث خطأ';
+                });
+        }
+    </script>
+
+</body>
+
+</html>
