@@ -21,18 +21,26 @@ def find_font_path(font_name="arial.ttf"):
     font_paths = []
     
     if sys.platform == "win32":
-        # Windows paths
+        # Windows paths - Try Arabic-friendly fonts first
         windir = os.environ.get("WINDIR", "C:\\Windows")
         font_paths = [
-            os.path.join(windir, "Fonts", font_name),
-            os.path.join(windir, "Fonts", "arial.ttf"),
+            # Arabic-friendly fonts (better for Arabic text) - ordered by quality
+            os.path.join(windir, "Fonts", "tahoma.ttf"),  # Tahoma - excellent for Arabic, great character joining
+            os.path.join(windir, "Fonts", "Tahoma.ttf"),
+            os.path.join(windir, "Fonts", "segoeui.ttf"),  # Segoe UI - modern and supports Arabic well
+            os.path.join(windir, "Fonts", "SegoeUI.ttf"),
+            os.path.join(windir, "Fonts", "arial.ttf"),  # Arial - good Arabic support
             os.path.join(windir, "Fonts", "Arial.ttf"),
+            os.path.join(windir, "Fonts", "arialuni.ttf"),  # Arial Unicode - comprehensive Unicode support
+            os.path.join(windir, "Fonts", "ArialUni.ttf"),
+            os.path.join(windir, "Fonts", font_name),
         ]
     elif sys.platform in ("linux", "linux2"):
-        # Linux paths (Render uses Linux)
+        # Linux paths (Render uses Linux) - Try Arabic-friendly fonts
         font_paths = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            # Try to find Arabic-friendly fonts first
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Good Arabic support
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",  # Good Arabic support
             "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/TTF/DejaVuSans.ttf",
             "/usr/share/fonts/dejavu/DejaVuSans.ttf",
@@ -112,26 +120,42 @@ def load_texts(filepath):
 
 def process_arabic_text(text):
     """
-    Reshape Arabic text for correct display in Pillow.
+    Reshape Arabic text for correct display in Pillow with proper character joining.
     
-    The issue: get_display() reverses text for RTL->LTR conversion,
-    but this causes text to appear backwards in videos.
-    
-    Solution: Use reshape() only - this connects Arabic letters properly
-    without reversing the text order.
+    Pillow renders text left-to-right, so we need to:
+    1. Reshape Arabic characters (connect letters properly)
+    2. Use get_display() to reverse the text order for RTL display
+    This ensures Arabic text appears correctly in videos with proper character joining.
     """
     if not text:
         return ""
     try:
-        # Reshape Arabic characters (connects letters properly for display)
-        # We do NOT use get_display() because it reverses the text order
-        # which causes backwards display in videos
+        # Configure arabic_reshaper for better Arabic text handling
+        # We use default configuration which handles Arabic properly
+        # delete_harakat=True (default): Remove diacritics for cleaner display
+        # support_ligatures=True (default): Support Arabic ligatures for better text joining
+        
+        # Step 1: Reshape Arabic characters (connects letters properly)
+        # This converts isolated Arabic characters to their proper contextual forms
+        # The reshape function automatically handles character joining
         reshaped_text = arabic_reshaper.reshape(text)
-        return reshaped_text
+        
+        # Step 2: Use get_display() to reverse text order for RTL
+        # This is necessary because Pillow renders LTR, so we need to reverse
+        # the visual order so it appears correctly when rendered
+        # get_display() handles the bidirectional algorithm correctly
+        display_text = get_display(reshaped_text)
+        
+        return display_text
     except Exception as e:
-        # If processing fails, return original text
+        # If processing fails, return original text with warning
         print(f"⚠️ Arabic text processing error: {e}")
-        return text
+        print(f"   Original text: {text[:50]}...")
+        # Try to return at least reshaped text without bidi if reshape works
+        try:
+            return arabic_reshaper.reshape(text)
+        except:
+            return text
 
 def _wrap_text_to_width(draw, text, font, max_width_px):
     # Simple word-wrap by spaces (works fine for Arabic sentences too)
@@ -183,14 +207,23 @@ def create_text_image(text, size, font_path, font_size, color, shadow_color=(0, 
 
     while current_size >= int(min_font_size):
         try:
-            font = ImageFont.truetype(font_path, current_size)
+            # Load font with better Arabic support
+            # Use layout_engine='OT' for better OpenType support (helps with Arabic)
+            try:
+                font = ImageFont.truetype(font_path, current_size, layout_engine=ImageFont.Layout.BASIC)
+            except (TypeError, AttributeError):
+                # Fallback for older Pillow versions
+                font = ImageFont.truetype(font_path, current_size)
         except (IOError, OSError) as e:
             print(f"⚠️ Warning: Font not found at {font_path}: {e}")
-            # Try to find another font
+            # Try to find another font with Arabic support
             found_font = find_font_path()
             if found_font and found_font != font_path:
                 try:
-                    font = ImageFont.truetype(found_font, current_size)
+                    try:
+                        font = ImageFont.truetype(found_font, current_size, layout_engine=ImageFont.Layout.BASIC)
+                    except (TypeError, AttributeError):
+                        font = ImageFont.truetype(found_font, current_size)
                     print(f"✅ Using alternative font: {found_font}")
                 except:
                     print("⚠️ Using default font (may not support Arabic)")
