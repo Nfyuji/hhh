@@ -34,12 +34,12 @@ except ImportError:
 # Note: The time you set in the UI should match this timezone
 try:
     if HAS_PYTZ:
-        SCHEDULER_TIMEZONE = pytz.timezone('UTC')  # UTC timezone
-        # Uncomment the line below and comment the line above if you want to use Saudi time
-        # SCHEDULER_TIMEZONE = pytz.timezone('Asia/Riyadh')  # Saudi Arabia timezone
+        # Use Saudi Arabia timezone
+        SCHEDULER_TIMEZONE = pytz.timezone('Asia/Riyadh')  # Saudi Arabia timezone
     else:
-        # Fallback to UTC timezone from datetime
+        # Fallback to UTC timezone from datetime (not ideal but works)
         SCHEDULER_TIMEZONE = timezone.utc
+        print("⚠️ Warning: pytz not available, using UTC. Install pytz for Saudi timezone support.")
 except Exception as e:
     print(f"⚠️ Warning: Could not set timezone, using UTC: {e}")
     SCHEDULER_TIMEZONE = utc if HAS_PYTZ else timezone.utc
@@ -90,7 +90,7 @@ DEFAULT_CONFIG = {
     },
     "text_overlay": {
         "font_path": "",  # Empty = auto-detect based on OS
-        "font_size": 70,
+        "font_size": 45,
         "color": "#FFFFFF",
         "shadow_color": "#000000",
         "shadow_offset": 2,
