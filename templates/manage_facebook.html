@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة YouTube - لوحة التحكم</title>
+    <title>إدارة Facebook - لوحة التحكم</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --bg-color: #1a1a2e;
             --card-bg: #16213e;
-            --accent: #ff0000;
+            --accent: #1877f2;
             --text-main: #ffffff;
             --text-sec: #0f3460;
             --success: #2ecc71;
@@ -79,7 +79,7 @@
         }
 
         input[type="text"],
-        select,
+        input[type="password"],
         textarea {
             width: 100%;
             padding: 12px;
@@ -90,6 +90,12 @@
             font-family: 'Tajawal', sans-serif;
             font-size: 1rem;
             box-sizing: border-box;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--accent);
+            outline: none;
         }
 
         .btn {
@@ -108,11 +114,15 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+            box-shadow: 0 5px 15px rgba(24, 119, 242, 0.4);
         }
 
         .btn-success {
             background-color: var(--success);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
         }
 
         .status-badge {
@@ -135,8 +145,14 @@
             border: 1px solid #e74c3c;
         }
 
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
         .info-box {
-            background: rgba(255, 0, 0, 0.1);
+            background: rgba(24, 119, 242, 0.1);
             border: 1px solid var(--accent);
             border-radius: 8px;
             padding: 15px;
@@ -146,12 +162,6 @@
         .info-box i {
             color: var(--accent);
             margin-left: 10px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
         }
 
         @media (max-width: 600px) {
@@ -167,8 +177,8 @@
         <a href="/" class="back-btn"><i class="fas fa-arrow-right"></i> العودة للوحة التحكم</a>
 
         <div class="header">
-            <h1><i class="fab fa-youtube"></i> إدارة YouTube</h1>
-            <p>إعدادات وإدارة النشر على YouTube</p>
+            <h1><i class="fab fa-facebook"></i> إدارة Facebook</h1>
+            <p>إعدادات وإدارة النشر على Facebook</p>
         </div>
 
         <!-- Status Card -->
@@ -184,50 +194,32 @@
             </div>
         </div>
 
-        <!-- Connection Card -->
-        <div class="card">
-            <h2>🔗 ربط الحساب</h2>
-            <p>قم بربط حساب Google/YouTube الخاص بك عبر OAuth</p>
-            <button type="button" onclick="connectYouTube()" class="btn">
-                🔗 ربط حساب YouTube
-            </button>
-            <p class="small" style="color: #888; margin-top: 10px;">
-                ملاحظة: تحتاج إلى Google Cloud Project مع YouTube Data API v3 مفعّل
-            </p>
-        </div>
-
         <!-- Settings Card -->
         <div class="card">
             <h2>⚙️ الإعدادات</h2>
-            <form id="youtubeForm">
+            <form id="facebookForm">
                 <div class="form-group">
-                    <label>تفعيل النشر على YouTube</label>
-                    <select id="enablePublish" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                        <option value="false">⛔ لا</option>
-                        <option value="true">✅ نعم</option>
-                    </select>
+                    <label>معرف الصفحة (Page ID)</label>
+                    <input type="text" id="pageId" placeholder="مثال: 1000872635..." required>
+                    <p class="small" style="color: #888; margin-top: 5px;">
+                        يمكنك الحصول عليه من: Facebook Page Settings > Page Info
+                    </p>
                 </div>
 
                 <div class="form-group">
-                    <label>إعدادات الفيديو (اختياري)</label>
-                    <div class="grid">
-                        <div>
-                            <label style="font-size: 0.9rem;">Privacy Status</label>
-                            <select id="privacyStatus" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                                <option value="public">عام</option>
-                                <option value="unlisted">غير مدرج</option>
-                                <option value="private">خاص</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size: 0.9rem;">Category</label>
-                            <select id="category" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                                <option value="22">People & Blogs</option>
-                                <option value="24">Entertainment</option>
-                                <option value="26">Howto & Style</option>
-                            </select>
-                        </div>
-                    </div>
+                    <label>رمز الوصول (Access Token)</label>
+                    <input type="password" id="accessToken" placeholder="EAA..." required>
+                    <p class="small" style="color: #888; margin-top: 5px;">
+                        يمكنك الحصول عليه من: Facebook Developers > Tools > Graph API Explorer
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label>تفعيل النشر على Facebook</label>
+                    <select id="enablePublish" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
+                        <option value="true">✅ نعم</option>
+                        <option value="false">⛔ لا</option>
+                    </select>
                 </div>
 
                 <button type="button" onclick="saveSettings()" class="btn btn-success">
@@ -236,18 +228,32 @@
             </form>
         </div>
 
+        <!-- Test Connection Card -->
+        <div class="card">
+            <h2>🧪 اختبار الاتصال</h2>
+            <p>اختبر الاتصال بـ Facebook API للتأكد من صحة الإعدادات</p>
+            <button type="button" onclick="testConnection()" class="btn">
+                🔍 اختبار الاتصال
+            </button>
+            <div id="testResult" style="margin-top: 15px; padding: 10px; border-radius: 8px; display: none;"></div>
+        </div>
+
         <!-- Info Card -->
         <div class="card">
             <h2>ℹ️ معلومات مفيدة</h2>
             <div class="info-box">
-                <p><strong>كيفية الحصول على Google Cloud Credentials:</strong></p>
+                <p><strong>كيفية الحصول على Page ID:</strong></p>
                 <ol style="line-height: 2;">
-                    <li>اذهب إلى <a href="https://console.cloud.google.com/" target="_blank" style="color: var(--accent);">Google Cloud Console</a></li>
-                    <li>أنشئ مشروع جديد أو اختر مشروع موجود</li>
-                    <li>فعّل YouTube Data API v3</li>
-                    <li>أنشئ OAuth 2.0 Client ID</li>
-                    <li>أضف Redirect URI: <code id="redirectUri" class="pill" style="background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 5px;">جاري التحميل...</code></li>
-                    <li>انسخ Client ID و Client Secret</li>
+                    <li>اذهب إلى صفحة Facebook الخاصة بك</li>
+                    <li>Settings > Page Info</li>
+                    <li>انسخ Page ID من هناك</li>
+                </ol>
+                <p style="margin-top: 15px;"><strong>كيفية الحصول على Access Token:</strong></p>
+                <ol style="line-height: 2;">
+                    <li>اذهب إلى <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color: var(--accent);">Graph API Explorer</a></li>
+                    <li>اختر التطبيق والصفحة</li>
+                    <li>اطلب الصلاحيات: pages_manage_posts, pages_read_engagement</li>
+                    <li>انسخ Access Token</li>
                 </ol>
             </div>
         </div>
@@ -256,23 +262,16 @@
     <script>
         // Load settings on startup
         loadSettings();
-        loadRedirectUri();
-
-        function loadRedirectUri() {
-            fetch('/api/base_url')
-                .then(r => r.json())
-                .then(env => {
-                    const redirectUri = env.base_url + '/youtube/callback';
-                    document.getElementById('redirectUri').textContent = redirectUri;
-                });
-        }
 
         function loadSettings() {
             fetch('/get_config')
                 .then(r => r.json())
                 .then(data => {
+                    document.getElementById('pageId').value = data.facebook_page_id || '';
+                    document.getElementById('accessToken').value = data.facebook_access_token || '';
+                    
                     const publishTargets = data.publish_targets || {};
-                    document.getElementById('enablePublish').value = publishTargets.youtube ? 'true' : 'false';
+                    document.getElementById('enablePublish').value = publishTargets.facebook ? 'true' : 'false';
                     
                     // Update status
                     updateStatus(data);
@@ -283,14 +282,13 @@
         }
 
         function updateStatus(data) {
-            const youtube = data.youtube || {};
-            const hasConnection = youtube.refresh_token || youtube.token;
-            const isEnabled = (data.publish_targets || {}).youtube;
+            const hasCredentials = data.facebook_page_id && data.facebook_access_token;
+            const isEnabled = (data.publish_targets || {}).facebook;
             
             const connectionStatus = document.getElementById('connectionStatus');
             const publishStatus = document.getElementById('publishStatus');
             
-            if (hasConnection) {
+            if (hasCredentials) {
                 connectionStatus.textContent = 'متصل';
                 connectionStatus.className = 'status-badge status-active';
             } else {
@@ -309,8 +307,10 @@
 
         function saveSettings() {
             const data = {
+                facebook_page_id: document.getElementById('pageId').value,
+                facebook_access_token: document.getElementById('accessToken').value,
                 publish_targets: {
-                    youtube: document.getElementById('enablePublish').value === 'true'
+                    facebook: document.getElementById('enablePublish').value === 'true'
                 }
             };
 
@@ -330,12 +330,38 @@
             });
         }
 
-        function connectYouTube() {
-            window.location.href = '/youtube/login';
+        function testConnection() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '⏳ جاري اختبار الاتصال...';
+            resultDiv.style.background = 'rgba(255, 255, 255, 0.1)';
+            
+            fetch('/test/facebook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page_id: document.getElementById('pageId').value,
+                    access_token: document.getElementById('accessToken').value
+                })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    resultDiv.innerHTML = '✅ ' + (res.message || 'الاتصال ناجح!');
+                    resultDiv.style.background = 'rgba(46, 204, 113, 0.2)';
+                    resultDiv.style.border = '1px solid #2ecc71';
+                } else {
+                    resultDiv.innerHTML = '❌ ' + (res.message || 'فشل الاتصال');
+                    resultDiv.style.background = 'rgba(231, 76, 60, 0.2)';
+                    resultDiv.style.border = '1px solid #e74c3c';
+                }
+            })
+            .catch(err => {
+                resultDiv.innerHTML = '❌ خطأ: ' + err.message;
+                resultDiv.style.background = 'rgba(231, 76, 60, 0.2)';
+                resultDiv.style.border = '1px solid #e74c3c';
+            });
         }
-
-        // Auto-refresh status every 5 seconds
-        setInterval(loadSettings, 5000);
     </script>
 </body>
 

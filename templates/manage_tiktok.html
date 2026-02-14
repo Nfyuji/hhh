@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة YouTube - لوحة التحكم</title>
+    <title>إدارة TikTok - لوحة التحكم</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --bg-color: #1a1a2e;
             --card-bg: #16213e;
-            --accent: #ff0000;
+            --accent: #00f2ea;
             --text-main: #ffffff;
             --text-sec: #0f3460;
             --success: #2ecc71;
@@ -79,8 +79,7 @@
         }
 
         input[type="text"],
-        select,
-        textarea {
+        select {
             width: 100%;
             padding: 12px;
             border-radius: 8px;
@@ -94,7 +93,7 @@
 
         .btn {
             background-color: var(--accent);
-            color: white;
+            color: #000;
             border: none;
             padding: 12px 25px;
             border-radius: 8px;
@@ -108,11 +107,12 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 242, 234, 0.4);
         }
 
         .btn-success {
             background-color: var(--success);
+            color: white;
         }
 
         .status-badge {
@@ -136,7 +136,7 @@
         }
 
         .info-box {
-            background: rgba(255, 0, 0, 0.1);
+            background: rgba(0, 242, 234, 0.1);
             border: 1px solid var(--accent);
             border-radius: 8px;
             padding: 15px;
@@ -148,16 +148,14 @@
             margin-left: 10px;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 600px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
+        .pill {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.85rem;
+            font-family: monospace;
         }
     </style>
 </head>
@@ -167,8 +165,8 @@
         <a href="/" class="back-btn"><i class="fas fa-arrow-right"></i> العودة للوحة التحكم</a>
 
         <div class="header">
-            <h1><i class="fab fa-youtube"></i> إدارة YouTube</h1>
-            <p>إعدادات وإدارة النشر على YouTube</p>
+            <h1><i class="fab fa-tiktok"></i> إدارة TikTok</h1>
+            <p>إعدادات وإدارة النشر على TikTok</p>
         </div>
 
         <!-- Status Card -->
@@ -181,53 +179,34 @@
                 <p><i class="fas fa-link"></i> <strong>حالة الربط:</strong> 
                     <span id="connectionStatus" class="status-badge status-inactive">غير متصل</span>
                 </p>
+                <p><i class="fas fa-id-card"></i> <strong>Open ID:</strong> 
+                    <span id="openId" class="pill">لا يوجد</span>
+                </p>
             </div>
         </div>
 
         <!-- Connection Card -->
         <div class="card">
             <h2>🔗 ربط الحساب</h2>
-            <p>قم بربط حساب Google/YouTube الخاص بك عبر OAuth</p>
-            <button type="button" onclick="connectYouTube()" class="btn">
-                🔗 ربط حساب YouTube
+            <p>قم بربط حساب TikTok الخاص بك عبر OAuth</p>
+            <button type="button" onclick="connectTikTok()" class="btn">
+                🔗 ربط حساب TikTok
             </button>
             <p class="small" style="color: #888; margin-top: 10px;">
-                ملاحظة: تحتاج إلى Google Cloud Project مع YouTube Data API v3 مفعّل
+                ملاحظة: تحتاج إلى حساب TikTok Developer مع Content Posting API مفعّل
             </p>
         </div>
 
         <!-- Settings Card -->
         <div class="card">
             <h2>⚙️ الإعدادات</h2>
-            <form id="youtubeForm">
+            <form id="tiktokForm">
                 <div class="form-group">
-                    <label>تفعيل النشر على YouTube</label>
+                    <label>تفعيل النشر على TikTok</label>
                     <select id="enablePublish" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
                         <option value="false">⛔ لا</option>
                         <option value="true">✅ نعم</option>
                     </select>
-                </div>
-
-                <div class="form-group">
-                    <label>إعدادات الفيديو (اختياري)</label>
-                    <div class="grid">
-                        <div>
-                            <label style="font-size: 0.9rem;">Privacy Status</label>
-                            <select id="privacyStatus" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                                <option value="public">عام</option>
-                                <option value="unlisted">غير مدرج</option>
-                                <option value="private">خاص</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size: 0.9rem;">Category</label>
-                            <select id="category" style="width:100%; padding:10px; border-radius:8px; background:#0f3460; color:white; border:none;">
-                                <option value="22">People & Blogs</option>
-                                <option value="24">Entertainment</option>
-                                <option value="26">Howto & Style</option>
-                            </select>
-                        </div>
-                    </div>
                 </div>
 
                 <button type="button" onclick="saveSettings()" class="btn btn-success">
@@ -240,14 +219,14 @@
         <div class="card">
             <h2>ℹ️ معلومات مفيدة</h2>
             <div class="info-box">
-                <p><strong>كيفية الحصول على Google Cloud Credentials:</strong></p>
+                <p><strong>كيفية الحصول على TikTok Developer Account:</strong></p>
                 <ol style="line-height: 2;">
-                    <li>اذهب إلى <a href="https://console.cloud.google.com/" target="_blank" style="color: var(--accent);">Google Cloud Console</a></li>
-                    <li>أنشئ مشروع جديد أو اختر مشروع موجود</li>
-                    <li>فعّل YouTube Data API v3</li>
-                    <li>أنشئ OAuth 2.0 Client ID</li>
-                    <li>أضف Redirect URI: <code id="redirectUri" class="pill" style="background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 5px;">جاري التحميل...</code></li>
-                    <li>انسخ Client ID و Client Secret</li>
+                    <li>اذهب إلى <a href="https://developers.tiktok.com/" target="_blank" style="color: var(--accent);">TikTok Developer Portal</a></li>
+                    <li>أنشئ حساب مطور</li>
+                    <li>أنشئ تطبيق جديد</li>
+                    <li>فعّل Content Posting API</li>
+                    <li>احصل على Client Key و Client Secret</li>
+                    <li>أضف Redirect URI: <code id="redirectUri" class="pill">جاري التحميل...</code></li>
                 </ol>
             </div>
         </div>
@@ -262,7 +241,7 @@
             fetch('/api/base_url')
                 .then(r => r.json())
                 .then(env => {
-                    const redirectUri = env.base_url + '/youtube/callback';
+                    const redirectUri = env.base_url + '/tiktok/callback';
                     document.getElementById('redirectUri').textContent = redirectUri;
                 });
         }
@@ -272,7 +251,7 @@
                 .then(r => r.json())
                 .then(data => {
                     const publishTargets = data.publish_targets || {};
-                    document.getElementById('enablePublish').value = publishTargets.youtube ? 'true' : 'false';
+                    document.getElementById('enablePublish').value = publishTargets.tiktok ? 'true' : 'false';
                     
                     // Update status
                     updateStatus(data);
@@ -283,19 +262,22 @@
         }
 
         function updateStatus(data) {
-            const youtube = data.youtube || {};
-            const hasConnection = youtube.refresh_token || youtube.token;
-            const isEnabled = (data.publish_targets || {}).youtube;
+            const tiktok = data.tiktok || {};
+            const hasConnection = tiktok.access_token && tiktok.open_id;
+            const isEnabled = (data.publish_targets || {}).tiktok;
             
             const connectionStatus = document.getElementById('connectionStatus');
             const publishStatus = document.getElementById('publishStatus');
+            const openIdEl = document.getElementById('openId');
             
             if (hasConnection) {
                 connectionStatus.textContent = 'متصل';
                 connectionStatus.className = 'status-badge status-active';
+                if (openIdEl) openIdEl.textContent = tiktok.open_id || '???';
             } else {
                 connectionStatus.textContent = 'غير متصل';
                 connectionStatus.className = 'status-badge status-inactive';
+                if (openIdEl) openIdEl.textContent = 'لا يوجد';
             }
             
             if (isEnabled) {
@@ -310,7 +292,7 @@
         function saveSettings() {
             const data = {
                 publish_targets: {
-                    youtube: document.getElementById('enablePublish').value === 'true'
+                    tiktok: document.getElementById('enablePublish').value === 'true'
                 }
             };
 
@@ -330,8 +312,8 @@
             });
         }
 
-        function connectYouTube() {
-            window.location.href = '/youtube/login';
+        function connectTikTok() {
+            window.location.href = '/tiktok/login';
         }
 
         // Auto-refresh status every 5 seconds
