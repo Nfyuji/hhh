@@ -263,7 +263,34 @@ def create_text_image(text, size, font_path, font_size, color, shadow_color=(0, 
         position = (int(size[0] * 0.5), int(size[1] * 0.5))
     x_center, y_center = position
 
-    y = int(y_center - total_h / 2)
+    actual_w = max((w for w, _ in line_sizes), default=0) if line_sizes else max_width_px
+    y_start = int(y_center - total_h / 2)
+    
+    # Draw creative glassmorphism/translucent background box
+    box_padding_x = 55
+    box_padding_y = 45
+    box_left = int(x_center - actual_w / 2 - box_padding_x)
+    box_right = int(x_center + actual_w / 2 + box_padding_x)
+    box_top = y_start - box_padding_y
+    box_bottom = y_start + total_h + box_padding_y
+
+    # Draw semi-transparent background with rounded corners for an awesome, modern look
+    try:
+        draw.rounded_rectangle(
+            [box_left, box_top, box_right, box_bottom],
+            radius=35,
+            fill=(20, 20, 20, 160)  # Semi-transparent sleek dark overlay
+        )
+    except AttributeError:
+        # Fallback for older Pillow versions
+        draw.rectangle(
+            [box_left, box_top, box_right, box_bottom],
+            fill=(20, 20, 20, 160)
+        )
+
+    y = y_start
+    stroke_width = max(1, int(current_size * 0.05)) # Dynamic stroke outline based on font size
+
     for (w, h), ln in zip(line_sizes, disp_lines):
         if align == "left":
             x = int(x_center - max_width_px / 2)
@@ -272,9 +299,17 @@ def create_text_image(text, size, font_path, font_size, color, shadow_color=(0, 
         else:
             x = int(x_center - w / 2)
 
-        # Shadow then main text
-        draw.text((x + int(shadow_offset), y + int(shadow_offset)), ln, font=font, fill=shadow_color)
-        draw.text((x, y), ln, font=font, fill=color)
+        # Elegant Text styling: shadow first, then the stroke, then the core text color
+        draw.text(
+            (x + int(shadow_offset), y + int(shadow_offset)), 
+            ln, font=font, fill=shadow_color, 
+            stroke_width=stroke_width, stroke_fill=shadow_color
+        )
+        draw.text(
+            (x, y), 
+            ln, font=font, fill=color, 
+            stroke_width=stroke_width, stroke_fill=(15, 15, 15) # Dark elegant outline frame
+        )
         y += h + int(line_spacing_px)
     
     return np.array(img)
