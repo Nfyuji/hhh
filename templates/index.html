@@ -468,6 +468,19 @@
                     أن كل شيء يعمل)</p>
             </div>
             <p id="actionResult" style="margin-top: 10px; color: #a2d2ff;"></p>
+
+            <!-- Video Player Preview -->
+            <div id="videoPreviewContainer"
+                style="display:none; margin-top:20px; text-align:center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="margin-top:0; margin-bottom:10px; color:#2ecc71; font-size:1.1rem;">👁️ مشاهدة المعاينة</h3>
+                <video id="videoPlayer" width="280"
+                    style="border-radius:12px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); border: 2px solid #3f72af;"
+                    controls autoplay loop>
+                    <source id="videoSource" src="" type="video/mp4">
+                    متصفحك لا يدعم تشغيل الفيديو.
+                </video>
+            </div>
+
             <div class="logs" id="logsBox" style="margin-top:10px;">جاهز…</div>
         </div>
 
@@ -905,6 +918,8 @@
 
         function previewVideo() {
             document.getElementById('actionResult').innerText = '⏳ جاري توليد المعاينة...';
+            document.getElementById('videoPreviewContainer').style.display = 'none'; // Hide old preview
+
             fetch('/preview', { method: 'POST' })
                 .then(r => r.json())
                 .then(res => {
@@ -921,6 +936,15 @@
                     document.getElementById('actionResult').style.border = '1px solid #2ecc71';
                     document.getElementById('actionResult').style.borderRadius = '8px';
                     document.getElementById('actionResult').style.color = '#2ecc71';
+
+                    // Show actual video preview directly in the UI
+                    const container = document.getElementById('videoPreviewContainer');
+                    const source = document.getElementById('videoSource');
+                    const player = document.getElementById('videoPlayer');
+                    source.src = '/download_last?t=' + new Date().getTime(); // timestamp to bypass cache
+                    player.load();
+                    container.style.display = 'block';
+
                 }).catch(() => {
                     document.getElementById('actionResult').innerText = '❌ حدث خطأ';
                 });
