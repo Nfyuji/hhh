@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube + Gemini - توليد ورفع تلقائي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            font-weight: 900;
+            background: linear-gradient(90deg, #ff0000, #ff6b6b, #ffa500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.95em;
+            margin-bottom: 15px;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #ccc;
+            font-size: 0.95em;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            direction: rtl;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: #666;
+        }
+
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #ff6b6b;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            color: #ccc;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-preview {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-preview:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, #ff0000, #cc0000);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-upload:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 0, 0.4);
+        }
+
+        /* Gemini API Key Section */
+        .api-key-section {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .api-key-section .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .btn-save-key {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #00b894, #00a381);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-save-key:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        /* Status Messages */
+        .status-msg {
+            padding: 12px 18px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-msg.success {
+            background: rgba(0, 184, 148, 0.15);
+            border: 1px solid rgba(0, 184, 148, 0.3);
+            color: #55efc4;
+            display: block;
+        }
+
+        .status-msg.error {
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            color: #ff7675;
+            display: block;
+        }
+
+        .status-msg.loading {
+            background: rgba(102, 126, 234, 0.15);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            color: #a29bfe;
+            display: block;
+        }
+
+        /* Image Preview */
+        .image-preview {
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .image-preview p {
+            margin-top: 10px;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Logs */
+        .logs-container {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            max-height: 350px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .logs-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .logs-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        .log-line {
+            padding: 3px 0;
+            color: #aaa;
+            word-break: break-all;
+        }
+
+        .log-line.success {
+            color: #55efc4;
+        }
+
+        .log-line.error {
+            color: #ff7675;
+        }
+
+        .log-line.info {
+            color: #74b9ff;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.6em;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .api-key-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← العودة للرئيسية</a>
+
+        <div class="header">
+            <h1>🎬 YouTube + Gemini AI</h1>
+            <p>أدخل الموضوع → Gemini يولّد الصورة → رفع تلقائي على يوتيوب</p>
+        </div>
+
+        <!-- Gemini API Key -->
+        <div class="card">
+            <h2>🔑 مفتاح Gemini API</h2>
+            <div class="api-key-section">
+                <div class="form-group">
+                    <input type="password" id="geminiApiKey" placeholder="أدخل مفتاح Gemini API..." />
+                </div>
+                <button class="btn-save-key" onclick="saveGeminiKey()">💾 حفظ</button>
+            </div>
+            <div id="keyStatus" class="status-msg"></div>
+        </div>
+
+        <!-- Main Form -->
+        <div class="card">
+            <h2>📝 توليد ورفع</h2>
+
+            <div class="form-group">
+                <label for="topic">الموضوع *</label>
+                <textarea id="topic"
+                    placeholder="اكتب الموضوع هنا... مثال: صورة غروب الشمس على البحر مع اقتباس تحفيزي"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="title">عنوان الفيديو (اختياري - يُملأ تلقائياً)</label>
+                <input type="text" id="title" placeholder="عنوان مخصص للفيديو على يوتيوب..." />
+            </div>
+
+            <div class="form-group">
+                <label for="description">الوصف (اختياري - يُملأ تلقائياً)</label>
+                <textarea id="description" placeholder="وصف مخصص للفيديو..."></textarea>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="addText" checked />
+                <label for="addText">إضافة النص على الفيديو</label>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-preview" onclick="generateImage()" id="btnPreview">
+                    🎨 معاينة الصورة
+                </button>
+                <button class="btn btn-upload" onclick="generateAndUpload()" id="btnUpload">
+                    🚀 توليد ورفع على يوتيوب
+                </button>
+            </div>
+
+            <div id="actionStatus" class="status-msg"></div>
+
+            <!-- Image Preview -->
+            <div id="imagePreview" class="image-preview">
+                <img id="previewImg" src="" alt="صورة مولّدة" />
+                <p id="previewText"></p>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="card">
+            <h2>📋 السجلات</h2>
+            <div class="logs-container" id="logsContainer">
+                <div class="log-line info">في انتظار العمليات...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load current Gemini API key status on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            setInterval(refreshLogs, 3000);
+        });
+
+        function loadConfig() {
+            fetch('/get_config')
+                .then(r => r.json())
+                .then(cfg => {
+                    const geminiKey = (cfg.gemini || {}).api_key || '';
+                    if (geminiKey && geminiKey !== '' && geminiKey !== '********') {
+                        document.getElementById('geminiApiKey').value = geminiKey;
+                        showStatus('keyStatus', 'success', '✅ مفتاح Gemini API مضبوط');
+                    }
+                })
+                .catch(err => console.error('Error loading config:', err));
+        }
+
+        function saveGeminiKey() {
+            const key = document.getElementById('geminiApiKey').value.trim();
+            if (!key) {
+                showStatus('keyStatus', 'error', '❌ أدخل المفتاح أولاً');
+                return;
+            }
+
+            // If masked, don't save
+            if (key.includes('...') || key === '********') {
+                showStatus('keyStatus', 'success', '✅ المفتاح محفوظ مسبقاً');
+                return;
+            }
+
+            fetch('/save_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    gemini: {
+                        api_key: key
+                    }
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showStatus('keyStatus', 'success', '✅ تم حفظ المفتاح بنجاح!');
+                    } else {
+                        showStatus('keyStatus', 'error', '❌ ' + (data.message || 'فشل الحفظ'));
+                    }
+                })
+                .catch(err => {
+                    showStatus('keyStatus', 'error', '❌ خطأ: ' + err.message);
+                });
+        }
+
+        function generateImage() {
+            const topic = document.getElementById('topic').value.trim();
+            if (!topic) {
+                showStatus('actionStatus', 'error', '❌ اكتب الموضوع أولاً');
+                return;
+            }
+
+            const btn = document.getElementById('btnPreview');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> جاري التوليد...';
+            showStatus('actionStatus', 'loading', '⏳ جاري توليد الصورة بواسطة Gemini AI...');
+
+            fetch('/youtube/generate_image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: topic })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '🎨 معاينة الصورة';
+
+                    if (data.status === 'success') {
+                        showStatus('actionStatus', 'success', '✅ ' + data.message);
+                        // Show image preview
+                        const preview = document.getElementById('imagePreview');
+                        const img = document.getElementById('previewImg');
+                        img.src = '/serve_image/' + data.image_path + '?t=' + Date.now();
+                        document.getElementById('previewText').textContent = 'المسار: ' + data.image_path;
+                        preview.style.display = 'block';
+                    } else {
+                        showStatus('actionStatus', 'error', '❌ ' + (data.message || 'فشل التوليد'));
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '🎨 معاينة الصورة';
+                    showStatus('actionStatus', 'error', '❌ خطأ: ' + err.message);
+                });
+        }
+
+        function generateAndUpload() {
+            const topic = document.getElementById('topic').value.trim();
+            if (!topic) {
+                showStatus('actionStatus', 'error', '❌ اكتب الموضوع أولاً');
+                return;
+            }
+
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const addText = document.getElementById('addText').checked;
+
+            const btn = document.getElementById('btnUpload');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> جاري العمل...';
+            showStatus('actionStatus', 'loading', '⏳ جاري توليد الصورة وإنشاء الفيديو والرفع على يوتيوب...');
+
+            fetch('/youtube/generate_and_upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    topic: topic,
+                    title: title,
+                    description: description,
+                    add_text_overlay: addText
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '🚀 توليد ورفع على يوتيوب';
+
+                    if (data.status === 'started') {
+                        showStatus('actionStatus', 'success', '✅ ' + data.message);
+                    } else if (data.status === 'error') {
+                        showStatus('actionStatus', 'error', '❌ ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '🚀 توليد ورفع على يوتيوب';
+                    showStatus('actionStatus', 'error', '❌ خطأ: ' + err.message);
+                });
+        }
+
+        function showStatus(elementId, type, message) {
+            const el = document.getElementById(elementId);
+            el.className = 'status-msg ' + type;
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        function refreshLogs() {
+            fetch('/logs')
+                .then(r => r.json())
+                .then(data => {
+                    const container = document.getElementById('logsContainer');
+                    const logs = data.logs || [];
+                    // Show last 50 logs
+                    const recentLogs = logs.slice(-50);
+                    container.innerHTML = recentLogs.map(log => {
+                        let cls = '';
+                        if (log.includes('✅') || log.includes('🎉')) cls = 'success';
+                        else if (log.includes('❌')) cls = 'error';
+                        else if (log.includes('🚀') || log.includes('🎨') || log.includes('📺')) cls = 'info';
+                        return `<div class="log-line ${cls}">${escapeHtml(log)}</div>`;
+                    }).join('');
+                    container.scrollTop = container.scrollHeight;
+                })
+                .catch(err => console.error('Error fetching logs:', err));
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>

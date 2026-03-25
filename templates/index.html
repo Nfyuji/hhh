@@ -215,12 +215,14 @@
         <div class="header">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h1 style="margin: 0;">🚀 لوحة تحكم البوت</h1>
-                <button onclick="logout()" class="btn" style="width: auto; padding: 8px 15px; background-color: #e74c3c;">
+                <button onclick="logout()" class="btn"
+                    style="width: auto; padding: 8px 15px; background-color: #e74c3c;">
                     🚪 تسجيل الخروج
                 </button>
             </div>
             <p>إدارة نشر الفيديوهات التحفيزية تلقائيًا</p>
-            <p class="small">اللوحة تعمل على: <a href="#" id="baseUrlLink" target="_blank" id="baseUrlDisplay">جاري التحميل...</a>
+            <p class="small">اللوحة تعمل على: <a href="#" id="baseUrlLink" target="_blank" id="baseUrlDisplay">جاري
+                    التحميل...</a>
                 <span id="envBadge" class="pill" style="margin-right:10px;"></span>
             </p>
         </div>
@@ -252,7 +254,7 @@
                         <option value="once">📅 مرة واحدة (بعد وقت محدد من الآن)</option>
                     </select>
                 </div>
-                
+
                 <div id="dailySchedule" class="schedule-option">
                     <div class="grid">
                         <div class="form-group">
@@ -266,7 +268,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="onceSchedule" class="schedule-option" style="display:none;">
                     <div class="grid">
                         <div class="form-group">
@@ -297,18 +299,26 @@
                 </div>
 
                 <!-- Platform Management Links -->
-                <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; margin-bottom: 20px;">
+                <div
+                    style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; margin-bottom: 20px;">
                     <h2 style="margin-top: 0; color: white;">🌐 إدارة المنصات</h2>
                     <p style="margin-bottom: 20px; color: rgba(255,255,255,0.9);">إدارة إعدادات كل منصة بشكل منفصل</p>
-                    <div class="grid">
-                        <a href="/manage/facebook" class="btn" style="background-color:#1877f2; text-decoration:none; display:block; text-align:center;">
-                            <i class="fab fa-facebook"></i> إدارة Facebook
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <a href="/manage/facebook" class="btn"
+                            style="background-color:#1877f2; text-decoration:none; display:block; text-align:center;">
+                            إدارة Facebook
                         </a>
-                        <a href="/manage/tiktok" class="btn" style="background-color:#00f2ea; color:#000; text-decoration:none; display:block; text-align:center;">
-                            <i class="fab fa-tiktok"></i> إدارة TikTok
+                        <a href="/manage/tiktok" class="btn"
+                            style="background-color:#00f2ea; color:#000; text-decoration:none; display:block; text-align:center;">
+                            إدارة TikTok
                         </a>
-                        <a href="/manage/youtube" class="btn" style="background-color:#ff0000; text-decoration:none; display:block; text-align:center;">
-                            <i class="fab fa-youtube"></i> إدارة YouTube
+                        <a href="/manage/youtube" class="btn"
+                            style="background-color:#ff0000; text-decoration:none; display:block; text-align:center;">
+                            إدارة YouTube
+                        </a>
+                        <a href="/manage/youtube_gemini" class="btn"
+                            style="background: linear-gradient(135deg, #ff0000, #ff6b00); text-decoration:none; display:block; text-align:center;">
+                            🤖 YouTube + Gemini AI
                         </a>
                     </div>
                 </div>
@@ -452,8 +462,10 @@
                 <button onclick="refreshLogs()" class="btn" style="background-color: #3f72af">📜 تحديث السجلات</button>
             </div>
             <div style="margin-top:12px;">
-                <button onclick="testScheduledJob()" class="btn" style="background-color: #9b59b6">🧪 اختبار المهمة المجدولة</button>
-                <p class="small" style="margin-top:5px;">استخدم هذا الزر لاختبار المهمة المجدولة يدوياً (مفيد للتأكد من أن كل شيء يعمل)</p>
+                <button onclick="testScheduledJob()" class="btn" style="background-color: #9b59b6">🧪 اختبار المهمة
+                    المجدولة</button>
+                <p class="small" style="margin-top:5px;">استخدم هذا الزر لاختبار المهمة المجدولة يدوياً (مفيد للتأكد من
+                    أن كل شيء يعمل)</p>
             </div>
             <p id="actionResult" style="margin-top: 10px; color: #a2d2ff;"></p>
             <div class="logs" id="logsBox" style="margin-top:10px;">جاهز…</div>
@@ -480,7 +492,7 @@
         // Detect environment and update UI
         let baseUrl = '';
         let isRender = false;
-        
+
         // Function to update base URL display
         function updateBaseUrl() {
             fetch('/api/base_url')
@@ -494,10 +506,10 @@
                     const linkEl = document.getElementById('baseUrlLink');
                     const displayEl = document.getElementById('baseUrlDisplay');
                     const badgeEl = document.getElementById('envBadge');
-                    
+
                     if (linkEl) linkEl.href = baseUrl;
                     if (displayEl) displayEl.textContent = baseUrl;
-                    
+
                     if (badgeEl) {
                         if (isRender) {
                             badgeEl.textContent = '🌐 Render';
@@ -519,10 +531,10 @@
                     if (displayEl) displayEl.textContent = baseUrl;
                 });
         }
-        
+
         // Load base URL on startup
         updateBaseUrl();
-        
+
         // Function to load and update config
         function loadConfig() {
             fetch('/get_config')
@@ -538,101 +550,101 @@
                         console.error('Config error:', data.error || 'Unknown error');
                         return;
                     }
-                document.getElementById('pageId').value = data.facebook_page_id || '';
-                document.getElementById('accessToken').value = data.facebook_access_token || '';
-                
-                // Only update schedule time if input is not focused (user not editing)
-                const scheduleTimeInput = document.getElementById('scheduleTime');
-                if (scheduleTimeInput !== document.activeElement) {
-                    const newTime = data.schedule_time || '09:00';
-                    // Normalize time format to HH:MM
-                    if (newTime && newTime.includes(':')) {
-                        const [h, m] = newTime.split(':');
-                        scheduleTimeInput.value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                    } else {
-                        scheduleTimeInput.value = newTime;
+                    document.getElementById('pageId').value = data.facebook_page_id || '';
+                    document.getElementById('accessToken').value = data.facebook_access_token || '';
+
+                    // Only update schedule time if input is not focused (user not editing)
+                    const scheduleTimeInput = document.getElementById('scheduleTime');
+                    if (scheduleTimeInput !== document.activeElement) {
+                        const newTime = data.schedule_time || '09:00';
+                        // Normalize time format to HH:MM
+                        if (newTime && newTime.includes(':')) {
+                            const [h, m] = newTime.split(':');
+                            scheduleTimeInput.value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        } else {
+                            scheduleTimeInput.value = newTime;
+                        }
                     }
-                }
-                
-                document.getElementById('isActive').value = data.is_active ? 'true' : 'false';
-                updateStatus(data.is_active);
-                
-                // Update schedule info after loading config
-                updateScheduleInfo();
 
-                // paths
-                document.getElementById('baseVideoPath').textContent = (data.paths && data.paths.base_video) ? data.paths.base_video : 'base.mp4';
-                document.getElementById('textsFilePath').textContent = (data.paths && data.paths.texts_file) ? data.paths.texts_file : 'texts.txt';
+                    document.getElementById('isActive').value = data.is_active ? 'true' : 'false';
+                    updateStatus(data.is_active);
 
-                // publish targets (simple toggle for now)
-                const targets = data.publish_targets || { facebook: true, tiktok: false };
-                document.getElementById('targetFacebook').value = targets.facebook ? 'true' : 'false';
+                    // Update schedule info after loading config
+                    updateScheduleInfo();
 
-                document.getElementById('targetTikTok').value = targets.tiktok ? 'true' : 'false';
-                document.getElementById('targetYouTube').value = targets.youtube ? 'true' : 'false';
+                    // paths
+                    document.getElementById('baseVideoPath').textContent = (data.paths && data.paths.base_video) ? data.paths.base_video : 'base.mp4';
+                    document.getElementById('textsFilePath').textContent = (data.paths && data.paths.texts_file) ? data.paths.texts_file : 'texts.txt';
 
-                // youtube details
+                    // publish targets (simple toggle for now)
+                    const targets = data.publish_targets || { facebook: true, tiktok: false };
+                    document.getElementById('targetFacebook').value = targets.facebook ? 'true' : 'false';
+
+                    document.getElementById('targetTikTok').value = targets.tiktok ? 'true' : 'false';
+                    document.getElementById('targetYouTube').value = targets.youtube ? 'true' : 'false';
+
+                    // youtube details
 
 
-                // statuses - Update connection status
-                // TikTok
-                const ts = document.getElementById('tiktokStatus');
-                if (data.tiktok && data.tiktok.access_token) {
-                    if (ts) {
-                        ts.textContent = 'متصل';
-                        ts.className = 'status-badge status-active';
+                    // statuses - Update connection status
+                    // TikTok
+                    const ts = document.getElementById('tiktokStatus');
+                    if (data.tiktok && data.tiktok.access_token) {
+                        if (ts) {
+                            ts.textContent = 'متصل';
+                            ts.className = 'status-badge status-active';
+                        }
+                        const openIdEl = document.getElementById('tiktokOpenId');
+                        if (openIdEl) openIdEl.textContent = data.tiktok.open_id || '???';
+                    } else if (ts) {
+                        ts.textContent = 'غير متصل';
+                        ts.className = 'status-badge status-inactive';
                     }
-                    const openIdEl = document.getElementById('tiktokOpenId');
-                    if (openIdEl) openIdEl.textContent = data.tiktok.open_id || '???';
-                } else if (ts) {
-                    ts.textContent = 'غير متصل';
-                    ts.className = 'status-badge status-inactive';
-                }
-                
-                // YouTube
-                const ys = document.getElementById('youtubeStatus');
-                if (data.youtube && (data.youtube.refresh_token || data.youtube.token)) {
-                    if (ys) {
-                        ys.textContent = 'متصل';
-                        ys.className = 'status-badge status-active';
-                    }
-                } else if (ys) {
-                    ys.textContent = 'غير متصل';
-                    ys.className = 'status-badge status-inactive';
-                }
 
-                // overlay - Only update if field is not focused (user not editing)
-                const o = data.text_overlay || {};
-                const overlayFields = ['fontSize', 'textColor', 'shadowColor', 'shadowOffset', 'lineSpacing', 'maxWidthPct', 'textAlign', 'positionMode', 'presetPos', 'xPct', 'yPct'];
-                overlayFields.forEach(fieldId => {
-                    const field = document.getElementById(fieldId);
-                    if (field && field !== document.activeElement) {
-                        if (fieldId === 'fontSize') field.value = o.font_size ?? 45;
-                        else if (fieldId === 'textColor') field.value = o.color ?? '#FFFFFF';
-                        else if (fieldId === 'shadowColor') field.value = o.shadow_color ?? '#000000';
-                        else if (fieldId === 'shadowOffset') field.value = o.shadow_offset ?? 2;
-                        else if (fieldId === 'lineSpacing') field.value = o.line_spacing_px ?? 14;
-                        else if (fieldId === 'maxWidthPct') field.value = o.max_width_pct ?? 0.86;
-                        else if (fieldId === 'textAlign') field.value = (o.align || 'center').toLowerCase();
-                        else if (fieldId === 'positionMode') field.value = (o.position_mode || 'preset').toLowerCase();
-                        else if (fieldId === 'presetPos') field.value = (o.preset || 'center').toLowerCase();
-                        else if (fieldId === 'xPct') field.value = o.x_pct ?? 0.5;
-                        else if (fieldId === 'yPct') field.value = o.y_pct ?? 0.5;
+                    // YouTube
+                    const ys = document.getElementById('youtubeStatus');
+                    if (data.youtube && (data.youtube.refresh_token || data.youtube.token)) {
+                        if (ys) {
+                            ys.textContent = 'متصل';
+                            ys.className = 'status-badge status-active';
+                        }
+                    } else if (ys) {
+                        ys.textContent = 'غير متصل';
+                        ys.className = 'status-badge status-inactive';
                     }
-                });
-                togglePositionUI();
 
-                loadTexts();
-                refreshLogs();
+                    // overlay - Only update if field is not focused (user not editing)
+                    const o = data.text_overlay || {};
+                    const overlayFields = ['fontSize', 'textColor', 'shadowColor', 'shadowOffset', 'lineSpacing', 'maxWidthPct', 'textAlign', 'positionMode', 'presetPos', 'xPct', 'yPct'];
+                    overlayFields.forEach(fieldId => {
+                        const field = document.getElementById(fieldId);
+                        if (field && field !== document.activeElement) {
+                            if (fieldId === 'fontSize') field.value = o.font_size ?? 45;
+                            else if (fieldId === 'textColor') field.value = o.color ?? '#FFFFFF';
+                            else if (fieldId === 'shadowColor') field.value = o.shadow_color ?? '#000000';
+                            else if (fieldId === 'shadowOffset') field.value = o.shadow_offset ?? 2;
+                            else if (fieldId === 'lineSpacing') field.value = o.line_spacing_px ?? 14;
+                            else if (fieldId === 'maxWidthPct') field.value = o.max_width_pct ?? 0.86;
+                            else if (fieldId === 'textAlign') field.value = (o.align || 'center').toLowerCase();
+                            else if (fieldId === 'positionMode') field.value = (o.position_mode || 'preset').toLowerCase();
+                            else if (fieldId === 'presetPos') field.value = (o.preset || 'center').toLowerCase();
+                            else if (fieldId === 'xPct') field.value = o.x_pct ?? 0.5;
+                            else if (fieldId === 'yPct') field.value = o.y_pct ?? 0.5;
+                        }
+                    });
+                    togglePositionUI();
+
+                    loadTexts();
+                    refreshLogs();
                 })
                 .catch(err => {
                     console.error('Error loading config:', err);
                 });
         }
-        
+
         // Load config on startup
         loadConfig();
-        
+
         // Function to update schedule info
         function updateScheduleInfo() {
             fetch('/get_schedule_info')
@@ -640,7 +652,7 @@
                 .then(info => {
                     const nextRunEl = document.getElementById('nextRunInfo');
                     let statusText = '';
-                    
+
                     if (!info.scheduler_running) {
                         statusText = '⚠️ الـ Scheduler متوقف - المهمة لن تعمل!';
                         nextRunEl.style.color = '#e74c3c';
@@ -658,12 +670,12 @@
                         statusText = '⛔ النشر التلقائي متوقف';
                         nextRunEl.style.color = '#e74c3c';
                     }
-                    
+
                     // Add timezone info
                     if (info.timezone) {
                         statusText += ` [${info.timezone}]`;
                     }
-                    
+
                     nextRunEl.textContent = statusText;
                 })
                 .catch(err => {
@@ -673,7 +685,7 @@
                     nextRunEl.style.color = '#e74c3c';
                 });
         }
-        
+
         // Auto-refresh config every 5 seconds to update connection status
         setInterval(loadConfig, 5000);
         // Update schedule info every 10 seconds
@@ -685,7 +697,7 @@
             const scheduleType = document.getElementById('scheduleType').value;
             const dailySchedule = document.getElementById('dailySchedule');
             const onceSchedule = document.getElementById('onceSchedule');
-            
+
             if (scheduleType === 'daily') {
                 dailySchedule.style.display = 'block';
                 onceSchedule.style.display = 'none';
@@ -694,30 +706,30 @@
                 onceSchedule.style.display = 'block';
             }
         }
-        
+
         function scheduleOnce() {
             const hours = parseInt(document.getElementById('hoursFromNow').value || '0', 10);
             const minutes = parseInt(document.getElementById('minutesFromNow').value || '0', 10);
-            
+
             if (hours < 0 || minutes < 0) {
                 alert('❌ القيم يجب أن تكون موجبة');
                 return;
             }
-            
+
             if (hours === 0 && minutes === 0) {
                 alert('❌ يجب تحديد وقت أكبر من 0');
                 return;
             }
-            
+
             // Calculate target time
             const now = new Date();
             const targetTime = new Date(now.getTime() + (hours * 60 + minutes) * 60 * 1000);
             const targetTimeStr = targetTime.toISOString();
-            
+
             const infoEl = document.getElementById('onceScheduleInfo');
             infoEl.textContent = `⏰ سيتم النشر في: ${targetTime.toLocaleString('ar-SA')}`;
             infoEl.style.color = '#2ecc71';
-            
+
             // Schedule the job
             fetch('/schedule_once', {
                 method: 'POST',
@@ -728,20 +740,20 @@
                     minutes: minutes
                 })
             })
-            .then(r => r.json())
-            .then(res => {
-                if (res.status === 'success') {
-                    alert('✅ تم جدولة النشر بنجاح!');
-                    setTimeout(() => refreshLogs(), 1000);
-                } else {
-                    alert('❌ فشل الجدولة: ' + (res.message || 'خطأ غير معروف'));
-                }
-            })
-            .catch(err => {
-                alert('❌ خطأ في الجدولة: ' + err.message);
-            });
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        alert('✅ تم جدولة النشر بنجاح!');
+                        setTimeout(() => refreshLogs(), 1000);
+                    } else {
+                        alert('❌ فشل الجدولة: ' + (res.message || 'خطأ غير معروف'));
+                    }
+                })
+                .catch(err => {
+                    alert('❌ خطأ في الجدولة: ' + err.message);
+                });
         }
-        
+
         function getUuidData() {
             return {
                 facebook_page_id: document.getElementById('pageId').value,
@@ -760,7 +772,7 @@
         function saveAllSettings(showAlert = true) {
             const data = getUuidData();
             console.log('Saving data:', data); // Debug
-            
+
             // Validate schedule time before sending
             const scheduleTime = data.schedule_time;
             if (scheduleTime) {
@@ -770,34 +782,34 @@
                     return Promise.reject(new Error('Invalid time format'));
                 }
             }
-            
+
             return fetch('/save_config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            .then(r => {
-                if (!r.ok) {
-                    return r.json().then(err => {
-                        throw new Error(err.message || err.error || 'فشل الحفظ');
-                    });
-                }
-                return r.json();
-            })
-            .then(res => {
-                if (res.status === 'success') {
-                    if (showAlert) alert('✅ ' + (res.message || 'تم حفظ الإعدادات بنجاح!'));
-                    updateStatus(data.is_active);
-                    // Reload config to show updated values (but preserve focused inputs)
-                    setTimeout(() => loadConfig(), 500);
-                } else {
-                    throw new Error(res.message || 'فشل الحفظ');
-                }
-            })
-            .catch(err => {
-                console.error('Save error:', err);
-                alert('❌ خطأ: ' + err.message);
-            });
+                .then(r => {
+                    if (!r.ok) {
+                        return r.json().then(err => {
+                            throw new Error(err.message || err.error || 'فشل الحفظ');
+                        });
+                    }
+                    return r.json();
+                })
+                .then(res => {
+                    if (res.status === 'success') {
+                        if (showAlert) alert('✅ ' + (res.message || 'تم حفظ الإعدادات بنجاح!'));
+                        updateStatus(data.is_active);
+                        // Reload config to show updated values (but preserve focused inputs)
+                        setTimeout(() => loadConfig(), 500);
+                    } else {
+                        throw new Error(res.message || 'فشل الحفظ');
+                    }
+                })
+                .catch(err => {
+                    console.error('Save error:', err);
+                    alert('❌ خطأ: ' + err.message);
+                });
         }
 
         document.getElementById('saveBtn').addEventListener('click', () => saveAllSettings(true));
@@ -968,13 +980,13 @@
             await saveAllSettings(false);
             window.location.href = '/youtube/login';
         }
-        
+
         function logout() {
             if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
                 window.location.href = '/logout';
             }
         }
-        
+
         function testScheduledJob() {
             if (!confirm('هل تريد تشغيل المهمة المجدولة للاختبار؟\n\nسيتم:\n1. توليد الفيديو\n2. رفعه على المنصات المحددة\n\nراقب السجلات لمعرفة النتيجة.')) return;
             document.getElementById('actionResult').innerText = '⏳ جاري تشغيل المهمة المجدولة...';
