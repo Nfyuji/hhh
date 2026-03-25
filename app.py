@@ -11,6 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import post  # Import our existing video logic
 import tiktok
 import youtube
+import gemini_image  # Gemini image generation for YouTube
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
@@ -102,6 +103,10 @@ DEFAULT_CONFIG = {
         "x_pct": 0.5,
         "y_pct": 0.5,
     },
+    "gemini": {
+        "api_key": os.getenv("GEMINI_API_KEY", ""),
+        "image_style": "realistic, high quality, vibrant colors, professional, suitable for social media, vertical 9:16 aspect ratio",
+    },
 }
 
 _LOGS = []
@@ -164,6 +169,12 @@ def load_config():
     # App Password
     if os.getenv("APP_PASSWORD"):
         cfg["app_password"] = os.getenv("APP_PASSWORD")
+    
+    # Gemini API Key from Environment Variable
+    if os.getenv("GEMINI_API_KEY"):
+        if "gemini" not in cfg:
+            cfg["gemini"] = {}
+        cfg["gemini"]["api_key"] = os.getenv("GEMINI_API_KEY")
 
     return cfg
 
@@ -440,6 +451,11 @@ def manage_youtube():
     """صفحة إدارة YouTube"""
     return render_template('manage_youtube.html')
 
+@app.route('/manage/youtube_gemini')
+def manage_youtube_gemini():
+    """صفحة YouTube + Gemini (توليد صور ورفع تلقائي)"""
+    return render_template('youtube_gemini.html')
+
 @app.route('/test/facebook', methods=['POST'])
 def test_facebook():
     """اختبار الاتصال بـ Facebook API"""
@@ -543,6 +559,13 @@ def get_config():
     # Mask app password
     if cfg.get("app_password"):
         cfg["app_password"] = "********"
+    
+    # Mask Gemini API key
+    gemini_key = cfg.get("gemini", {}).get("api_key", "")
+    if gemini_key and len(gemini_key) > 8:
+        cfg["gemini"]["api_key"] = gemini_key[:4] + "..." + gemini_key[-4:]
+    elif gemini_key:
+        cfg["gemini"]["api_key"] = "********"
 
     return jsonify(cfg)
 
@@ -569,6 +592,13 @@ def save_config():
     if incoming_secret == "********" or incoming_secret:
         # Always remove from save - must come from Environment Variable
         new_data["youtube"]["client_secret"] = ""
+    
+    # 🔒 Gemini API Key - Handle masked values
+    if "gemini" in new_data:
+        incoming_gemini_key = new_data.get("gemini", {}).get("api_key", "")
+        if "..." in incoming_gemini_key or incoming_gemini_key == "********":
+            # Keep existing value
+            new_data["gemini"]["api_key"] = current_config.get("gemini", {}).get("api_key", "")
     
     # 🔒 TikTok - Never save client_key or client_secret from UI
     if "tiktok" in new_data:
@@ -946,6 +976,100 @@ def youtube_callback():
     except Exception as e:
         add_log(f"❌ YouTube callback failed: {e}")
         return f"Error: {e}", 500
+
+# ==================== YouTube + Gemini Routes ====================
+
+@app.route('/youtube/generate_image', methods=['POST'])
+def youtube_generate_image():
+    """Generate an image using Gemini API (preview only, no upload)"""
+    try:
+        data = request.json
+        topic = data.get('topic', '').strip()
+        if not topic:
+            return jsonify({"status": "error", "message": "الموضوع مطلوب"}), 400
+        
+        cfg = load_config()
+        gemini_cfg = cfg.get('gemini', {})
+        style = gemini_cfg.get('image_style', '')
+        
+        add_log(f"🎨 Generating image for topic: {topic}")
+        
+        image_path = gemini_image.generate_image_with_gemini(
+            topic=topic,
+            api_key="", # No longer needed for Lexica fallback
+            style_prompt=style
+        )
+        
+        add_log(f"✅ Image generated: {image_path}")
+        return jsonify({
+            "status": "success",
+            "image_path": image_path,
+            "message": "تم توليد الصورة بنجاح!"
+        })
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        add_log(f"❌ Image generation failed: {e}")
+        add_log(f"📋 Traceback: {error_trace}")
+        return jsonify({"status": "error", "message": f"فشل توليد الصورة: {str(e)}"}), 500
+
+@app.route('/youtube/generate_and_upload', methods=['POST'])
+def youtube_generate_and_upload():
+    """Full flow: Generate image with Gemini -> Create video -> Upload to YouTube"""
+    try:
+        data = request.json
+        topic = data.get('topic', '').strip()
+        title = data.get('title', '').strip()
+        description = data.get('description', '').strip()
+        add_text = data.get('add_text_overlay', True)
+        
+        if not topic:
+            return jsonify({"status": "error", "message": "الموضوع مطلوب"}), 400
+        
+        cfg = load_config()
+        
+        # Check YouTube connection
+        if not youtube.is_youtube_connected(cfg):
+            return jsonify({"status": "error", "message": "يوتيوب غير متصل. اربط حسابك أولاً."}), 400
+        
+        add_log(f"🚀 Starting YouTube + Gemini flow for: {topic}")
+        
+        # Run in background thread
+        def runner():
+            try:
+                result = gemini_image.generate_and_upload_to_youtube(
+                    topic=topic,
+                    config=cfg,
+                    title=title or None,
+                    description=description or None,
+                    add_text_overlay=add_text
+                )
+                if result.get('youtube_video_id'):
+                    add_log(f"🎉 تم الرفع بنجاح! Video ID: {result['youtube_video_id']}")
+                    add_log(f"🔗 https://youtube.com/shorts/{result['youtube_video_id']}")
+                else:
+                    add_log("⚠️ Upload completed but no video ID returned")
+            except Exception as e:
+                import traceback
+                add_log(f"❌ YouTube+Gemini flow failed: {e}")
+                add_log(f"📋 Traceback: {traceback.format_exc()}")
+        
+        thread = threading.Thread(target=runner, daemon=True)
+        thread.start()
+        
+        return jsonify({
+            "status": "started",
+            "message": "جاري توليد الصورة والرفع على يوتيوب... راقب السجلات"
+        })
+    except Exception as e:
+        add_log(f"❌ Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/serve_image/<path:filename>')
+def serve_image(filename):
+    """Serve generated images from uploads directory"""
+    return send_file(filename, mimetype='image/png')
+
 @app.route('/run_now', methods=['POST'])
 def run_now():
     # Run in separate thread to not block request
