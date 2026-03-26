@@ -55,9 +55,11 @@ def get_auth_url(config: dict, state: str) -> str:
     auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline', include_granted_scopes='true')
     return auth_url
 
-def exchange_code_for_credentials(config: dict, code: str) -> dict:
+def exchange_code_for_credentials(config: dict, code: str, code_verifier: str = None) -> dict:
     """Exchange the authorization code for credentials."""
     flow = get_flow(config)
+    if code_verifier is not None:
+        flow.code_verifier = code_verifier
     flow.fetch_token(code=code)
     creds = flow.credentials
     return credentials_to_dict(creds)

@@ -937,7 +937,15 @@ def youtube_login():
     
     state = "some_random_state" # Should be random
     try:
-        auth_url = youtube.get_auth_url(cfg, state=state)
+        import youtube
+        flow = youtube.get_flow(cfg, state=state)
+        auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline', include_granted_scopes='true')
+        
+        cv = getattr(flow, 'code_verifier', None)
+        if cv:
+            cfg["youtube"]["code_verifier"] = cv
+            save_config_file(cfg)
+            
         add_log(f"🚀 Redirecting to YouTube for OAuth: {auth_url}")
         from flask import redirect
         return redirect(auth_url)
@@ -954,7 +962,11 @@ def youtube_callback():
         return "Missing code", 400
     
     try:
-        creds_dict = youtube.exchange_code_for_credentials(cfg, code)
+        cv = cfg.get("youtube", {}).pop("code_verifier", None)
+        if cv:
+            save_config_file(cfg)
+            
+        creds_dict = youtube.exchange_code_for_credentials(cfg, code, code_verifier=cv)
         # Update config with new credentials
         # We need to preserve client_id/secret if not returned (usually they are in creds object though)
         # deep_merge might overwrite everything, let's be careful.
